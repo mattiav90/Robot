@@ -1,14 +1,6 @@
 import cv2
-import numpy as np
-import Jetson.GPIO as GPIO
-import time
-
-# GPIO setup
-output_pin = 18  # Change to your desired GPIO pin
-GPIO.setmode(GPIO.BOARD)  # Use physical pin numbering
-GPIO.setup(output_pin, GPIO.OUT)
-
 print(cv2.__version__)
+
 dispW = 800
 dispH = 500
 flip = 2

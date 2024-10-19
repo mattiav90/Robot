@@ -1,8 +1,26 @@
+import RPi.GPIO as GPIO
+import time
+import keyboard  # Import the keyboard library
 import cv2
 import numpy as np
-import Jetson.GPIO as GPIO
-import time
+import Jetson.GPIO as GPIOJ
 
+
+
+# ****************** Setup pwm outputs ******************
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(32, GPIO.OUT)
+GPIO.setup(33, GPIO.OUT)
+
+# Start PWM
+my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
+my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
+duty_cycle = 50              # duty cycle
+my_pwm1.start(duty_cycle)
+my_pwm2.start(duty_cycle)
+
+
+# ****************** Setting up image ******************
 # Image width and height
 dispW = 800
 dispH = 600
@@ -17,16 +35,8 @@ camSet = 'nvarguscamerasrc !  video/x-raw(memory:NVMM), \
 
 cam = cv2.VideoCapture(camSet)
 
-def nothing():
-    pass
 
-cv2.namedWindow('cam')
-cv2.namedWindow('cam1')
-cv2.createTrackbar('x1', 'cam', 1, 10, nothing)
-cv2.createTrackbar('x2', 'cam', 1, 10, nothing)
-cv2.createTrackbar('x3', 'cam', 0, 500, nothing)
-cv2.createTrackbar('x4', 'cam', 10, 500, nothing)
-cv2.moveWindow('cam', 0, 0)
+
 
 # Set a minimum area for contours to be considered "big"
 min_area = 70  # You can adjust this value as needed
@@ -37,15 +47,6 @@ while True:
     if not ret:
         break
 
-    x1 = cv2.getTrackbarPos('x1', 'cam')
-    x2 = cv2.getTrackbarPos('x2', 'cam')
-    x3 = cv2.getTrackbarPos('x3', 'cam')
-    x4 = cv2.getTrackbarPos('x4', 'cam')
-    x5 = cv2.getTrackbarPos('x5', 'cam')
-    print(x1)
-    print(x2)
-    print(x3)
-    print(x4)
 
     # Get dimensions
     height, width, _ = img.shape
@@ -97,7 +98,12 @@ while True:
     if cv2.waitKey(1) == ord('q'):
         break
 
-# Cleanupq
+
+
+# Cleanup
 cam.release()
-GPIO.cleanup()  # Reset GPIO settings
+GPIOJ.cleanup()  # Reset GPIO settings
 cv2.destroyAllWindows()
+my_pwm1.stop()
+my_pwm2.stop()
+GPIO.cleanup()

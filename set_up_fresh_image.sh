@@ -27,15 +27,13 @@ cd jetson-fan-ctl
 sudo ./install.sh
 
 
-# installing adfruit for pwm
+# install pip. update pip.
 cd ~
 sudo apt-get install python3-pip
 sudo apt install -y python3 git python3-pip
-sudo update-alternatives --install /usr/bin/python python $(which python2) 1
-sudo update-alternatives --install /usr/bin/python python $(which python3) 2
-sudo update-alternatives --config python
-# pick python3
 
+
+# install python3.8 and set up 2 alternatives.
 sudo apt install -y python3.8
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
@@ -43,5 +41,7 @@ sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
 sudo update-alternatives --config python3
 
 
-
+# install adaftruit for pwm
+sudo pip3 install --upgrade pip
+sudo apt-get install python3.8-dev
 sudo pip3 install adafruit-circuitpython-servokit

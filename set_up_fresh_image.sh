@@ -12,11 +12,13 @@ sudo dpkg -i code-oss_1.32.3-arm64.deb
 
 # download the github repo. 
 # create a new ssh key.
+git config --global user.email "mattia.vezzoli@yale.edu"
+git config --global user.name "mattiav90"
 
 # avoid to enter password all the time when running sudo commands
 sudo visudo
 # find the line that says %sudo   ALL=(ALL:ALL) ALL. and replace it with 
-sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+mattiav90 ALL=(ALL:ALL) NOPASSWD: ALL
 
 
 # installing fan

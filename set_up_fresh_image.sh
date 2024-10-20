@@ -15,6 +15,13 @@ sudo dpkg -i code-oss_1.32.3-arm64.deb
 git config --global user.email "mattia.vezzoli@yale.edu"
 git config --global user.name "mattiav90"
 
+
+# install pip
+sudo apt-get install python-pip
+# install matplotlib
+sudo apt-get install python-matplotlib
+
+
 # avoid to enter password all the time when running sudo commands
 sudo visudo
 # find the line that says %sudo   ALL=(ALL:ALL) ALL. and replace it with 
@@ -48,3 +55,5 @@ sudo pip3 install adafruit-circuitpython-servokit
 
 # find the i2c servo driver
 sudo i2cdetect -y -r 1
+
+

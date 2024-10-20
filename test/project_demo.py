@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import Jetson.GPIO as GPIO
 import time
+import matplotlib.pyplot as plt
+
 
 # Image width and height
 dispW = 800
@@ -20,13 +22,22 @@ cam = cv2.VideoCapture(camSet)
 def nothing(x):
     pass
 
+# windows for images
 cv2.namedWindow('cam')
 cv2.namedWindow('cam1')
+cv2.namedWindow('cam2')
+# positions of windows
+cv2.moveWindow('cam', 0, 0)
+cv2.moveWindow('cam1', 300, 0)
+cv2.moveWindow('cam2', 300, 300)
+
+# plt.ion()
+# fig,ax=plt.subplots()
+
 cv2.createTrackbar('x1', 'cam', 230, 500, nothing)
 cv2.createTrackbar('x2', 'cam', 320, 500, nothing)
 cv2.createTrackbar('x3', 'cam', 0, 500, nothing)
 cv2.createTrackbar('x4', 'cam', 10, 500, nothing)
-cv2.moveWindow('cam', 0, 0)
 
 # Set a minimum area for contours to be considered "big"
 min_area = 70  # You can adjust this value as needed
@@ -63,6 +74,8 @@ while True:
 
     # convert in grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
+
 
     # Apply Canny edge detection
     edges = cv2.Canny(gray, x1, x2)
@@ -100,6 +113,7 @@ while True:
     # Display the original image with the edge-detected ROI
     cv2.imshow('cam', img)
     cv2.imshow('cam1', mask)
+    
     
 
     if cv2.waitKey(1) == ord('q'):

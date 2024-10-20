@@ -10,10 +10,20 @@ sudo apt-get install curl
 curl -L https://github.com/toolboc/vscode/releases/download/1.32.3/code-oss_1.32.3-arm64.deb -o code-oss_1.32.3-arm64.deb
 sudo dpkg -i code-oss_1.32.3-arm64.deb
 
-# setup github
-cd ~/Desktop
-git clone https://github.com/mattiav90/Robot.git
-echo "you have to set up a ssh key manually for this"
+# download the github repo. 
+# create a new ssh key.
+
+# avoid to enter password all the time when running sudo commands
+sudo visudo
+# find the line that says %sudo   ALL=(ALL:ALL) ALL. and replace it with 
+sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+
+
+# installing fan
+git clone https://github.com/Pyrestone/jetson-fan-ctl.git
+cd jetson-fan-ctl
+sudo ./install.sh
+
 
 # installing adfruit for pwm
 cd ~

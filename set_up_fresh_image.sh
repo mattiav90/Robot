@@ -45,3 +45,6 @@ sudo update-alternatives --config python3
 sudo pip3 install --upgrade pip
 sudo apt-get install python3.8-dev
 sudo pip3 install adafruit-circuitpython-servokit
+
+# find the i2c servo driver
+sudo i2cdetect -y -r 1

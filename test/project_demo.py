@@ -22,8 +22,8 @@ def nothing(x):
 
 cv2.namedWindow('cam')
 cv2.namedWindow('cam1')
-cv2.createTrackbar('x1', 'cam', 1, 10, nothing)
-cv2.createTrackbar('x2', 'cam', 1, 10, nothing)
+cv2.createTrackbar('x1', 'cam', 230, 500, nothing)
+cv2.createTrackbar('x2', 'cam', 320, 500, nothing)
 cv2.createTrackbar('x3', 'cam', 0, 500, nothing)
 cv2.createTrackbar('x4', 'cam', 10, 500, nothing)
 cv2.moveWindow('cam', 0, 0)
@@ -51,47 +51,55 @@ while True:
     height, width, _ = img.shape
     
     # Define the ROI (bottom half)
-    # roi_start_y = height // 2
-    # roi_end_y = height
-    # roi = img[roi_start_y:roi_end_y, 0:width]  # Slicing to get the bottom half
+    roi_start_y = height // 2
+    roi_end_y = height
+    img = img[roi_start_y:roi_end_y, 0:width]  # Slicing to get the bottom half
+    # re set based on the new shape
+    height, width, _ = img.shape
 
-    # Convert ROI to grayscale for edge detection
-    # roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    # blur a littlebit the image
+    kernel=np.ones((5,5),np.float32)/25
+    dst=cv2.filter2D(img,-1,kernel)
+
+    # convert in grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Apply Canny edge detection
-    edges = cv2.Canny(gray, 100, 250)
+    edges = cv2.Canny(gray, x1, x2)
 
-    # kernel=np.ones((2,2),np.uint8)
-    # opened=cv2.morphologyEx(edges,cv2.MORPH_OPEN,kernel)
+    # dilate a little bit the found edges
+    kernel=np.ones((5,5),np.float32)/50
+    edges = cv2.dilate(edges,kernel,iterations=1)
 
-    kernel=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(7,7))
-    dilated=cv2.dilate(edges,kernel,iterations=1)
-    
-    kernel_erode=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(20,20))
-    eroded=cv2.erode(dilated,kernel_erode,iterations=1)
-    dilated2=cv2.dilate(eroded,kernel,iterations=1)
+    # draw a line at the bottom of the image
+    cv2.line(edges, (0, height - 1), (width - 1, height - 1), (255), thickness=3)  # Draws a white line
+    cv2.line(edges, (0, 1), (width - 1, 1), (255), thickness=3)  # Draws a white line
 
-
-    # Apply a binary threshold to the edges
-    _, thresholded_edges = cv2.threshold(dilated2, 100, 250, cv2.THRESH_BINARY)
-
-    # Find contours
-    contours, hierarchy = cv2.findContours(thresholded_edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    for c in contours:
-        if cv2.contourArea(c)>1000:
-            # print("area: ",cv2.contourArea(c))
-            cv2.drawContours(img,c,-1,(0,0,255),2)
-    
+    # open
+    # edges =  cv2.morphologyEx(edges, cv2.MORPH_OPEN, kernel)
 
 
-    # Draw a rectangle around the ROI on the original image
-    # cv2.rectangle(img, (0, roi_start_y), (width, roi_end_y), (0, 255, 0), 2)
+
+    # Step 3: Find contours
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # create a mask
+    mask=np.zeros(img.shape,np.uint8)
+    # fill the poligons that are found in contours
+    cv2.fillPoly(mask,contours,255)
+
+    # open
+    kernel=np.ones((20,20),np.float32)/50
+    # mask =  cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+
+    # erode
+    mask= cv2.erode(mask,kernel,iterations = 1)
+
+
 
     # Display the original image with the edge-detected ROI
     cv2.imshow('cam', img)
-    cv2.imshow('cam1', edges)
+    cv2.imshow('cam1', mask)
     
 
     if cv2.waitKey(1) == ord('q'):

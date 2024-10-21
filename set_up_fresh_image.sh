@@ -52,8 +52,14 @@ sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
 sudo update-alternatives --config python3
 
 
+# install opencv
+sudo apt-get install python3-opencv
+# this might br helpfull. 
+https://qengineering.eu/install-opencv-on-jetson-nano.html
+
+
 # install adaftruit for pwm
-sudo pip3 install --upgrade pip
+sudo pip3 install --upgrade pip 
 sudo apt-get install python3.8-dev
 sudo pip3 install adafruit-circuitpython-servokit
 
@@ -61,3 +67,31 @@ sudo pip3 install adafruit-circuitpython-servokit
 sudo i2cdetect -y -r 1
 
 
+
+#I managed to install python 3.7.10 using this 
+# this will buiuld it from the source. so go in a folder where you can istall it. 
+cd ~
+
+sudo apt update
+sudo apt install build-essential checkinstall \
+    libreadline-gplv2-dev libncursesw5-dev libssl-dev \
+    libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev \
+    libffi-dev zlib1g-dev wget
+
+
+wget https://www.python.org/ftp/python/3.10.12/Python-3.10.12.tgz
+
+
+tar -xzf Python-3.10.12.tgz
+cd Python-3.10.12
+
+
+./configure --enable-optimizations
+make -j$(nproc)
+sudo make altinstall
+
+python3.10 --version
+
+# set as default
+echo "alias python3=python3.10" >> ~/.bashrc
+source ~/.bashrc

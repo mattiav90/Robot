@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import Jetson.GPIO as GPIO
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 # Image width and height
@@ -148,5 +148,5 @@ cam.release()
 # GPIO.cleanup()  # Reset GPIO settings
 cv2.destroyAllWindows()
 # cam.release()
-plt.ioff()  # Disable interactive mode
-plt.show()  # Show the final plot (optional)
+# plt.ioff()  # Disable interactive mode
+# plt.show()  # Show the final plot (optional)

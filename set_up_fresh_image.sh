@@ -1,6 +1,10 @@
 # update
 sudo apt-get update
 
+# opencv e camera works with 2.7 python
+# servo motor and adafruit works with python 3.8. 
+# 
+
 # install opencv
 sudo apt-get install python3-opencv
 sudo apt-get remove python3-opencv

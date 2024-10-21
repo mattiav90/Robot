@@ -3,6 +3,7 @@ import numpy as np
 import Jetson.GPIO as GPIO
 import time
 import matplotlib.pyplot as plt
+import subprocess
 
 
 # Image width and height
@@ -41,16 +42,14 @@ cv2.createTrackbar('x4', 'cam', 255, 500, nothing)
 min_area = 70  # You can adjust this value as needed
 
 
-# def plot_histogram(image):
-#     """Plot the histogram of an image."""
-#     plt.clf()  # Clear the previous histogram
-#     color = ('b', 'g', 'r')
-#     for i, col in enumerate(color):
-#         histr = cv2.calcHist([image], [i], None, [256], [0, 256])
-#         plt.plot(histr, color=col)
-#         plt.xlim([0, 256])
-#     plt.draw()  # Update the plot
-#     plt.pause(1)  # Pause to allow the plot to update
+def call_steering(x,width):
+    try:
+        # Call the Python 3.8 script with the angle as an argument
+        subprocess.check_call(['python3.8', 'steer.py', str(x), str(width)])
+    except subprocess.CalledProcessError as e:
+        print("An error occurred while calling the steering script:", e)
+
+
 
 kernel_soft=np.ones((5,5),np.float32)/20
 kernel_hard=np.ones((7,7),np.float32)/3
@@ -118,6 +117,7 @@ while True:
                 x = int(M['m10'] / M['m00'])
                 y = int(M['m01'] / M['m00'])
                 print("x: ",x)
+                call_steering(x,width)
 
                 
 

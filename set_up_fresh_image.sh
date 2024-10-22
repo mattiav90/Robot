@@ -60,6 +60,8 @@ ssh-keygen -t ed25519 -C "mattia.vezzoli@yale.edu"
 eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519.pub
+git remote set-url origin git@github.com:mattiav90/Robot.git
+
 
 
 

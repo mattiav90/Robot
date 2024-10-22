@@ -57,9 +57,9 @@ sudo update-alternatives --config python3
 
 #push and pull ingithub with no passoword. setup a key.
 ssh-keygen -t ed25519 -C "mattia.vezzoli@yale.edu"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+eval "$(ssh-agent -s)" ssh-add ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519.pub
+# go in local repo to run this
 git remote set-url origin git@github.com:mattiav90/Robot.git
 
 

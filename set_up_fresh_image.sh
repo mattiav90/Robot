@@ -64,6 +64,9 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 
+#this might be helpfull to install opoencv on python 3.8. testing it
+https://github.com/AastaNV/JEP/tree/master/script
+
 
 
 

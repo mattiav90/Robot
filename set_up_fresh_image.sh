@@ -5,7 +5,7 @@ sudo apt-get update
 # servo motor and adafruit works with python 3.8. 
 # 
 
-# install opencv
+# install opencv. this works. but I am not sure which version I am installing it in. 
 sudo apt-get install python3-opencv
 sudo apt-get remove python3-opencv
 
@@ -44,6 +44,13 @@ sudo ./install.sh
 cd ~
 sudo apt-get install python3-pip
 sudo apt install -y python3 git python3-pip
+
+#I managed to isntall cv2 on python3. currently it does not see the camera. do this steps.
+sudo apt-get install python3
+sudo apt-get install python3-pip
+pip3 install --upgrade pip
+pip3 install --upgrade setuptools
+pip3 install opencv-python
 
 
 # install python3.8 and set up 2 alternatives.

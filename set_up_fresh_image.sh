@@ -1,5 +1,58 @@
-# update
+########### this list is installed on the backup..   ##########
+
+# update system
 sudo apt-get update
+sudo apt-get upgrade
+
+# install code-oss (editor)
+sudo apt-get install curl
+curl -L https://github.com/toolboc/vscode/releases/download/1.32.3/code-oss_1.32.3-arm64.deb -o code-oss_1.32.3-arm64.deb
+sudo dpkg -i code-oss_1.32.3-arm64.deb
+
+#setup github
+git config --global user.email "mattia.vezzoli@yale.edu"
+git config --global user.name "mattiav90"
+
+
+# avoid to enter password all the time when running sudo commands
+sudo visudo
+# add this at the end of the file
+mattiav90 ALL=(ALL) NOPASSWD: ALL
+
+
+# installing fan
+git clone https://github.com/Pyrestone/jetson-fan-ctl.git
+cd jetson-fan-ctl
+sudo ./install.sh
+
+
+#push and pull ingithub with no passoword. setup a key.
+ssh-keygen -t ed25519 -C "mattia.vezzoli@yale.edu"
+eval "$(ssh-agent -s)" ssh-add ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub
+# go in local repo to run this
+git remote set-url origin git@github.com:mattiav90/Robot.git
+
+
+
+########## this is correct and it works only with python 3.7 at least. ##########
+
+
+# install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
+sudo pip3 install --upgrade pip 
+sudo apt-get install python3.8-dev
+sudo pip3 install adafruit-circuitpython-servokit
+
+# find the i2c servo driver
+sudo i2cdetect -y -r 1
+
+
+
+
+########### from here on, you have to figure out what to install...   ##########
+
+
+
 
 # opencv e camera works with 2.7 python
 # servo motor and adafruit works with python 3.8. 
@@ -9,15 +62,8 @@ sudo apt-get update
 sudo apt-get install python3-opencv
 sudo apt-get remove python3-opencv
 
-# install code-oss (editor)
-sudo apt-get install curl
-curl -L https://github.com/toolboc/vscode/releases/download/1.32.3/code-oss_1.32.3-arm64.deb -o code-oss_1.32.3-arm64.deb
-sudo dpkg -i code-oss_1.32.3-arm64.deb
 
-# download the github repo. 
-# create a new ssh key.
-git config --global user.email "mattia.vezzoli@yale.edu"
-git config --global user.name "mattiav90"
+
 
 
 # install pip
@@ -26,18 +72,9 @@ sudo apt-get install python-pip
 sudo apt-get install python-matplotlib
 
 
-# avoid to enter password all the time when running sudo commands
-sudo visudo
-# find the line that says %sudo   ALL=(ALL:ALL) ALL. and replace it with 
-mattiav90 ALL=(ALL:ALL) NOPASSWD: ALL
-# add this at the end of the file
-mattiav90 ALL=(ALL) NOPASSWD: ALL
 
 
-# installing fan
-git clone https://github.com/Pyrestone/jetson-fan-ctl.git
-cd jetson-fan-ctl
-sudo ./install.sh
+
 
 
 # install pip. update pip.
@@ -62,12 +99,6 @@ sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 3
 sudo update-alternatives --config python3
 
 
-#push and pull ingithub with no passoword. setup a key.
-ssh-keygen -t ed25519 -C "mattia.vezzoli@yale.edu"
-eval "$(ssh-agent -s)" ssh-add ~/.ssh/id_ed25519
-cat ~/.ssh/id_ed25519.pub
-# go in local repo to run this
-git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 
@@ -77,13 +108,6 @@ https://github.com/AastaNV/JEP/tree/master/script
 
 
 
-# install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
-sudo pip3 install --upgrade pip 
-sudo apt-get install python3.8-dev
-sudo pip3 install adafruit-circuitpython-servokit
-
-# find the i2c servo driver
-sudo i2cdetect -y -r 1
 
 
 

@@ -18,9 +18,9 @@ git clone --branch 4.1.1 --depth 1  https://github.com/opencv/opencv.git
 git clone --branch 4.1.1 --depth 1  https://github.com/opencv/opencv_contrib.git
 
 #go in opencv and make the folder build.
-#now go back one folder and run:
+#now go in it and run
 
-sudo pip install numpy && cd ./opencv/build  && cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_TBB=ON -DWITH_V4L=ON -DPYTHON_DEFAULT_EXECUTABLE=/usr/bin/python3.8 -DBUILD_NEW_PYTHON_SUPPORT=ON -DBUILD_opencv_python3=ON -D HAVE_opencv_python3=ON -DWITH_QT=ON -DWITH_OPENGL=ON -DWITH_FFMPEG=ON -DOPENCV_ENABLE_NONFREE=ON -DOPENCV_EXTRA_MODULES_PATH=/lib/opencv_contrib/modules ..  &&  make -j4  && make install
+sudo pip install numpy  && cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_TBB=ON -DWITH_V4L=ON -DPYTHON_DEFAULT_EXECUTABLE=/usr/bin/python3.8 -DBUILD_NEW_PYTHON_SUPPORT=ON -DBUILD_opencv_python3=ON -D HAVE_opencv_python3=ON -DWITH_QT=ON -DWITH_OPENGL=ON -DWITH_FFMPEG=ON -DOPENCV_ENABLE_NONFREE=ON -DOPENCV_EXTRA_MODULES_PATH=/lib/opencv_contrib/modules ..  &&  make -j4  && make install
 
 
 
@@ -33,3 +33,8 @@ cmake \
 -D PYTHON_LIBRARIES=/usr/lib/python3.8/config-3.8-aarch64-linux-gnu/libpython3.8.so \
 -D PYTHON3_EXECUTABLE=/usr/bin/python3.8 \
 -D WITH_CUDA=ON -D WITH_CUDNN=ON -D CUDA_ARCH_BIN="7.2,8.7" -D CUDA_ARCH_PTX="" -D OPENCV_GENERATE_PKGCONFIG=ON -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-${version}/modules -D WITH_GSTREAMER=ON -D WITH_LIBV4L=ON -D BUILD_opencv_python3=ON -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_EXAMPLES=OFF -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local ..
+
+
+
+
+

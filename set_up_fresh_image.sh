@@ -1,10 +1,13 @@
-###################### this list is installed on the backup..   ######################
+######################   this list is installed on the backup	######################
+
+#######################	all of this stuff should be also in the backup	#######################
 
 # update system
 sudo apt-get update
 sudo apt-get upgrade
 sudo reboot
 sudo apt install git build-essential
+sudo apt install software-properties-common
 
 
 #install support for exfat drives
@@ -50,6 +53,15 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 
+########## create a virtual environment  ##########
+
+mkdir project-name && cd project-name
+python3 -m venv .venv
+source .venv/bin/activate
+#now you are in the virtual environment. you install packages here. they should not interfere with outside stuff.
+
+
+
 ###################### this is correct and it works only with python 3.7 at least. ######################
 # I need this to test the servo motors.
 
@@ -65,8 +77,14 @@ sudo update-alternatives --config python3
 
 
 # install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
+
+#install pip and pip3. and update it. 
+sudo apt-get install python-pip
 sudo apt-get install python3-pip
+sudo pip install --upgrade pip 
 sudo pip3 install --upgrade pip 
+
+
 # sudo apt-get install python3.8-dev
 sudo pip3 install adafruit-circuitpython-servokit
 

@@ -111,7 +111,7 @@ while True:
             # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
 
             if ratio>10:
-                cv2.drawContours(img, [c], -1, (0, 0, 255), 2) 
+                cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
                 M = cv2.moments(c)
 
                 # Calculate the centroid coordinates

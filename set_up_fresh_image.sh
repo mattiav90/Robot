@@ -3,14 +3,18 @@
 # update system
 sudo apt-get update
 sudo apt-get upgrade
+sudo reboot
 sudo apt install git build-essential
 
 
 #install support for exfat drives
 sudo apt install git build-essential
+cd ~
+git clone https://github.com/arter97/exfat-linux
 cd exfat-linux
 make
 sudo make install
+sudo reboot
 sudo modprobe exfat
 cat /proc/filesystems
 

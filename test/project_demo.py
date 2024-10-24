@@ -3,6 +3,23 @@ import numpy as np
 import Jetson.GPIO as GPIO
 import time
 # import matplotlib.pyplot as plt
+# for steering
+import Fabo_PCA9685
+import pkg_resources
+import smbus
+
+
+# initialize the servo
+BUSNUM=1
+SERVO_HZ=50
+INITIAL_VALUE=300
+bus = smbus.SMBus(BUSNUM)
+PCA9685 = Fabo_PCA9685.PCA9685(bus,INITIAL_VALUE)
+PCA9685.set_hz(SERVO_HZ)
+# this is the single channel of BUS0. 
+channel=0
+
+
 
 
 # Image width and height
@@ -118,6 +135,11 @@ while True:
                 x = int(M['m10'] / M['m00'])
                 y = int(M['m01'] / M['m00'])
                 print("x: ",x)
+
+                angle=((x/width)*350)+100
+
+                # to steer. 
+                # PCA9685.set_channel_value(channel,angle)
 
                 
 

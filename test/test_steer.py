@@ -2,31 +2,20 @@
 import Fabo_PCA9685
 import time
 import pkg_resources
+import smbus
 
 
-SMBUS='smbus'
-for dist in pkg_resources.working_set:
-    #print(dist.project_name, dist.version)
-    if dist.project_name == 'smbus':
-        break
-    if dist.project_name == 'smbus2':
-        SMBUS='smbus2'
-        break
-if SMBUS == 'smbus':
-    import smbus
-elif SMBUS == 'smbus2':
-    import smbus2 as smbus
 
-# init
+# initialize the servo motor. 
 BUSNUM=1
 SERVO_HZ=50
 INITIAL_VALUE=300
 bus = smbus.SMBus(BUSNUM)
 PCA9685 = Fabo_PCA9685.PCA9685(bus,INITIAL_VALUE)
 PCA9685.set_hz(SERVO_HZ)
-
-
+# this is the single channel of BUS0. 
 channel=0
+
 
 for angle in range(110,480,10):
     PCA9685.set_channel_value(channel,angle)
@@ -41,21 +30,3 @@ for angle in range(480,110,-10):
     print(value)
     time.sleep(0.05)
 
-
-
-# # set value
-# value = 10
-# PCA9685.set_channel_value(channel,value)
-
-# # get value(Get chip register's value. This value may not be equal to the actual position.)
-# value = PCA9685.get_channel_value(channel)
-# print(value)
-
-# time.sleep(1)
-
-# value = 300
-# PCA9685.set_channel_value(channel,value)
-
-# # get value(Get chip register's value. This value may not be equal to the actual position.)
-# value = PCA9685.get_channel_value(channel)
-# print(value)

@@ -2,6 +2,8 @@
 import Fabo_PCA9685
 import time
 import pkg_resources
+
+
 SMBUS='smbus'
 for dist in pkg_resources.working_set:
     #print(dist.project_name, dist.version)
@@ -23,21 +25,37 @@ bus = smbus.SMBus(BUSNUM)
 PCA9685 = Fabo_PCA9685.PCA9685(bus,INITIAL_VALUE)
 PCA9685.set_hz(SERVO_HZ)
 
-# set value
-value = 10
-channel = 0 # PWM0番目のピンのサーボ
-PCA9685.set_channel_value(channel,value)
 
-# get value(Get chip register's value. This value may not be equal to the actual position.)
-value = PCA9685.get_channel_value(channel)
-print(value)
+channel=0
 
-time.sleep(1)
+for angle in range(110,480,10):
+    PCA9685.set_channel_value(channel,angle)
+    value = PCA9685.get_channel_value(channel)
+    print(value)
+    time.sleep(0.05)
 
-value = 300
-channel = 0 # PWM0番目のピンのサーボ
-PCA9685.set_channel_value(channel,value)
 
-# get value(Get chip register's value. This value may not be equal to the actual position.)
-value = PCA9685.get_channel_value(channel)
-print(value)
+for angle in range(480,110,-10):
+    PCA9685.set_channel_value(channel,angle)
+    value = PCA9685.get_channel_value(channel)
+    print(value)
+    time.sleep(0.05)
+
+
+
+# # set value
+# value = 10
+# PCA9685.set_channel_value(channel,value)
+
+# # get value(Get chip register's value. This value may not be equal to the actual position.)
+# value = PCA9685.get_channel_value(channel)
+# print(value)
+
+# time.sleep(1)
+
+# value = 300
+# PCA9685.set_channel_value(channel,value)
+
+# # get value(Get chip register's value. This value may not be equal to the actual position.)
+# value = PCA9685.get_channel_value(channel)
+# print(value)

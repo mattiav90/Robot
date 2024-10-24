@@ -80,6 +80,15 @@ sudo i2cdetect -y -r 1
 sudo apt install python3.7-dev
 
 
+#install python 3.8
+wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz
+tar xzf Python-3.8.10.tgz
+cd Python-3.8.10
+./configure --enable-optimizations
+sudo make altinstall
+python3.8 --version
+
+
 
 
 ###################### from here on, you have to figure out what to install...   ######################

@@ -1,3 +1,13 @@
+
+
+#build opencv from source link
+https://docs.opencv.org/4.x/d2/de6/tutorial_py_setup_in_ubuntu.html
+
+
+
+#this is the build that comes installed on jetson nano
+
+
 mattiav90@jetson:~$ python
 Python 2.7.17 (default, Mar  8 2023, 18:40:28) 
 [GCC 7.5.0] on linux2

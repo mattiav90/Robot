@@ -51,6 +51,16 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 ########## this is correct and it works only with python 3.7 at least. ##########
+# I need this to test the servo motors.
+
+# install python3.8 and set up 2 alternatives.
+sudo apt install -y python3.8
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python2.7 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 3
+# this command lets you select which python to use in automatic (version)
+sudo update-alternatives --config python3
+
 
 
 # install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
@@ -104,14 +114,6 @@ pip3 install --upgrade pip
 pip3 install --upgrade setuptools
 pip3 install opencv-python
 
-
-# install python3.8 and set up 2 alternatives.
-sudo apt install -y python3.8
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python2.7 1
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 3
-# this command lets you select which python to use in automatic (version)
-sudo update-alternatives --config python3
 
 
 

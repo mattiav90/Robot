@@ -53,12 +53,17 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 
+###### install package for steering servo ########
+
+# follow this: https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
+
+git clone https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
+pip install FaBoPWM-PCA9685-Python/
+#then use the code in the file test_steer.py
+
+
 ########## create a virtual environment  ##########
 
-mkdir project-name && cd project-name
-python3 -m venv .venv
-source .venv/bin/activate
-#now you are in the virtual environment. you install packages here. they should not interfere with outside stuff.
 
 
 

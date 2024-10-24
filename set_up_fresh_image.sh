@@ -1,4 +1,4 @@
-########### this list is installed on the backup..   ##########
+###################### this list is installed on the backup..   ######################
 
 # update system
 sudo apt-get update
@@ -50,31 +50,48 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 
 
 
-########## this is correct and it works only with python 3.7 at least. ##########
+###################### this is correct and it works only with python 3.7 at least. ######################
 # I need this to test the servo motors.
 
 # install python3.8 and set up 2 alternatives.
 sudo apt install -y python3.8
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python2.7 1
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 3
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 3
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 4
 # this command lets you select which python to use in automatic (version)
 sudo update-alternatives --config python3
 
 
 
 # install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
+sudo apt-get install python3-pip
 sudo pip3 install --upgrade pip 
-sudo apt-get install python3.8-dev
+# sudo apt-get install python3.8-dev
 sudo pip3 install adafruit-circuitpython-servokit
 
 # find the i2c servo driver
 sudo i2cdetect -y -r 1
 
 
+###################### testiong this stuff   ######################
+
+#install python3.7
+sudo apt install python3.7-dev
 
 
-########### from here on, you have to figure out what to install...   ##########
+#install python 3.8
+wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz
+tar xzf Python-3.8.10.tgz
+cd Python-3.8.10
+./configure --enable-optimizations
+sudo make altinstall
+python3.8 --version
+
+
+
+
+###################### from here on, you have to figure out what to install...   ######################
 
 
 

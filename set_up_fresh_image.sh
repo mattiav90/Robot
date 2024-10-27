@@ -58,6 +58,7 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 # follow this: https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
 
 git clone https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
+sudo apt-get install python-pip
 pip install FaBoPWM-PCA9685-Python/
 #then use the code in the file test_steer.py
 
@@ -65,51 +66,6 @@ pip install FaBoPWM-PCA9685-Python/
 ########## create a virtual environment  ##########
 
 
-
-
-###################### this is correct and it works only with python 3.7 at least. ######################
-# I need this to test the servo motors.
-
-# install python3.8 and set up 2 alternatives.
-sudo apt install -y python3.8
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python2.7 1
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 3
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 4
-# this command lets you select which python to use in automatic (version)
-sudo update-alternatives --config python3
-
-
-
-# install adaftruit for pwm. for this you need at least python3.7. or blinka will complain
-
-#install pip and pip3. and update it. 
-sudo apt-get install python-pip
-sudo apt-get install python3-pip
-sudo pip install --upgrade pip 
-sudo pip3 install --upgrade pip 
-
-
-# sudo apt-get install python3.8-dev
-sudo pip3 install adafruit-circuitpython-servokit
-
-# find the i2c servo driver
-sudo i2cdetect -y -r 1
-
-
-###################### testiong this stuff   ######################
-
-# FaBoPWM-PCA9685-Python
-#use the PCA9685 board with 12C.
-#### install
-
-git clone https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
-pip install FaBoPWM-PCA9685-Python/
-
-
-
-
-###################### from here on, you have to figure out what to install...   ######################
 
 
 

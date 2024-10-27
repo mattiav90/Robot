@@ -22,7 +22,7 @@ channel=0
 
 
 
-# Image width and height
+# window width and height
 dispW = 800
 dispH = 600
 flip = 0
@@ -41,18 +41,18 @@ def nothing(x):
 
 # windows for images
 cv2.namedWindow('cam')
-cv2.namedWindow('cam1')
+# cv2.namedWindow('cam1')
 cv2.namedWindow('cam2')
 # positions of windows
 cv2.moveWindow('cam', 0, 0)
-cv2.moveWindow('cam1', 500, 0)
+# cv2.moveWindow('cam1', 500, 0)
 cv2.moveWindow('cam2', 500, 500)
 
 
-cv2.createTrackbar('x1', 'cam', 110, 500, nothing)
-cv2.createTrackbar('x2', 'cam', 250, 500, nothing)
-cv2.createTrackbar('x3', 'cam', 100, 500, nothing)
-cv2.createTrackbar('x4', 'cam', 255, 500, nothing)
+cv2.createTrackbar('x1', 'cam', 100, 200, nothing)
+# cv2.createTrackbar('x2', 'cam', 250, 500, nothing)
+# cv2.createTrackbar('x3', 'cam', 100, 500, nothing)
+# cv2.createTrackbar('x4', 'cam', 255, 500, nothing)
 
 # Set a minimum area for contours to be considered "big"
 min_area = 70  # You can adjust this value as needed
@@ -70,7 +70,7 @@ min_area = 70  # You can adjust this value as needed
 #     plt.pause(1)  # Pause to allow the plot to update
 
 kernel_soft=np.ones((5,5),np.float32)/20
-kernel_hard=np.ones((7,7),np.float32)/3
+kernel_hard=np.ones((11,11),np.float32)/2
 
 
 while True:
@@ -79,14 +79,11 @@ while True:
     if not ret:
         break
 
-    # plot the histogram 
-    # plot_histogram(img)
-    
     
     x1 = cv2.getTrackbarPos('x1', 'cam')
-    x2 = cv2.getTrackbarPos('x2', 'cam')
-    x3 = cv2.getTrackbarPos('x3', 'cam')
-    x4 = cv2.getTrackbarPos('x4', 'cam')
+    # x2 = cv2.getTrackbarPos('x2', 'cam')
+    # x3 = cv2.getTrackbarPos('x3', 'cam')
+    # x4 = cv2.getTrackbarPos('x4', 'cam')
     
 
     # Get dimensions
@@ -98,14 +95,22 @@ while True:
     img = img[roi_start_y:roi_end_y, 0:width]  # Slicing to get the bottom half
     # re set based on the new shape
     height, width, _ = img.shape
-
+    print("image height: ",height," width: ",width)
+    #convert in grey scale
     grey= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+
 
     # blur a littlebit the image
     dst=cv2.filter2D(grey,-1,kernel_soft)
 
+    #get the average grey  (returns an rgb space. use only the first value)
+    avg = cv2.mean(dst)
+    avg= avg[0]*(x1/100)        #this is just (avg*1).
+    # print("avg= ",avg)
+
     # Step 1: Threshold the image
-    _, thresh1 = cv2.threshold(dst, x3, x4, cv2.THRESH_BINARY)
+    _, thresh1 = cv2.threshold(dst, avg, 255, cv2.THRESH_BINARY)
 
     # erode
     thresh1= cv2.erode(thresh1,kernel_hard,iterations = 1)
@@ -122,34 +127,33 @@ while True:
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
         area=cv2.contourArea(c)
-        if (aspect_ratio<0.5) and area>10000:
+        if (aspect_ratio<0.6) and area>1000:
             (x,y),(MA,ma),angle = cv2.fitEllipse(c)
             ratio=ma/MA
-            # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
+            print("MA: ",MA," ma: ",ma," ratio: ",ratio)
+            test_feature=int(height-200)
 
-            if ratio>10:
+            test_height = (height-h)< 100 
+
+            if ratio>int(10) and test_height:
                 cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
-                M = cv2.moments(c)
+                rect_area=w*h
+                extent=float(area)/rect_area
+                print("extent: ",extent)     
+                print("ratio: ",ratio)
+                print("angle: ",angle)     
+                print("rece height: ",h," w: ",w)   
 
+                
                 # Calculate the centroid coordinates
+                M = cv2.moments(c)
                 x = int(M['m10'] / M['m00'])
                 y = int(M['m01'] / M['m00'])
                 print("x: ",x)
-
                 angle=((x/width)*350)+100
-
                 PCA9685.set_channel_value(channel,angle)
 
                 
-
-
-
-              
-
-
-
-
-
 
 
 

@@ -95,7 +95,8 @@ while True:
     img = img[roi_start_y:roi_end_y, 0:width]  # Slicing to get the bottom half
     # re set based on the new shape
     height, width, _ = img.shape
-    print("image height: ",height," width: ",width)
+    # print("image height: ",height," width: ",width)
+    
     #convert in grey scale
     grey= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -130,19 +131,21 @@ while True:
         if (aspect_ratio<0.6) and area>1000:
             (x,y),(MA,ma),angle = cv2.fitEllipse(c)
             ratio=ma/MA
-            print("MA: ",MA," ma: ",ma," ratio: ",ratio)
+            # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
             test_feature=int(height-200)
 
+            # controls if the height of the enclosing rectangle is close to the
+            # entire height of the image
             test_height = (height-h)< 100 
 
             if ratio>int(10) and test_height:
                 cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
                 rect_area=w*h
                 extent=float(area)/rect_area
-                print("extent: ",extent)     
-                print("ratio: ",ratio)
-                print("angle: ",angle)     
-                print("rece height: ",h," w: ",w)   
+                # print("extent: ",extent)     
+                # print("ratio: ",ratio)
+                # print("angle: ",angle)     
+                # print("rece height: ",h," w: ",w)   
 
                 
                 # Calculate the centroid coordinates

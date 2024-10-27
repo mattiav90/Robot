@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
-import Jetson.GPIO as GPIO
 import time
-# import matplotlib.pyplot as plt
 # for steering
 import Fabo_PCA9685
 import pkg_resources
 import smbus
+#back motors
+import RPi.GPIO as GPIO
 
 
 # initialize the servo
@@ -20,6 +20,18 @@ PCA9685.set_hz(SERVO_HZ)
 channel=0
 
 
+#activate back motors
+
+# Setup
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(32, GPIO.OUT)
+
+# Start PWM
+my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
+my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
+duty_cycle = 50  # Initial duty cycle (10%)
+my_pwm1.start(duty_cycle)
+my_pwm2.start(duty_cycle)
 
 
 # window width and height
@@ -172,5 +184,10 @@ while True:
         break
 
 
+# Cleanup
+
 cam.release()
 cv2.destroyAllWindows()
+my_pwm1.stop()
+my_pwm2.stop()
+GPIO.cleanup()

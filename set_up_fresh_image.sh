@@ -99,17 +99,12 @@ sudo i2cdetect -y -r 1
 
 ###################### testiong this stuff   ######################
 
-#install python3.7
-sudo apt install python3.7-dev
+# FaBoPWM-PCA9685-Python
+#use the PCA9685 board with 12C.
+#### install
 
-
-#install python 3.8
-wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz
-tar xzf Python-3.8.10.tgz
-cd Python-3.8.10
-./configure --enable-optimizations
-sudo make altinstall
-python3.8 --version
+git clone https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
+pip install FaBoPWM-PCA9685-Python/
 
 
 
@@ -118,86 +113,3 @@ python3.8 --version
 
 
 
-
-# opencv e camera works with 2.7 python
-# servo motor and adafruit works with python 3.8. 
-# 
-
-# install opencv. this works. but I am not sure which version I am installing it in. 
-sudo apt-get install python3-opencv
-sudo apt-get remove python3-opencv
-
-
-
-
-
-# install pip
-sudo apt-get install python-pip
-# install matplotlib
-sudo apt-get install python-matplotlib
-
-
-
-
-
-
-
-# install pip. update pip.
-cd ~
-sudo apt-get install python3-pip
-sudo apt install -y python3 git python3-pip
-
-#I managed to isntall cv2 on python3. currently it does not see the camera. do this steps.
-sudo apt-get install python3
-sudo apt-get install python3-pip
-pip3 install --upgrade pip
-pip3 install --upgrade setuptools
-pip3 install opencv-python
-
-
-
-
-
-
-#this might be helpfull to install opoencv on python 3.8. testing it
-https://github.com/AastaNV/JEP/tree/master/script
-
-
-
-
-
-
-
-#I managed to install python 3.7.10 using this 
-# this will buiuld it from the source. so go in a folder where you can istall it. 
-cd ~
-
-sudo apt update
-sudo apt install build-essential checkinstall \
-    libreadline-gplv2-dev libncursesw5-dev libssl-dev \
-    libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev \
-    libffi-dev zlib1g-dev wget
-
-wget https://www.python.org/ftp/python/3.10.12/Python-3.10.12.tgz
-
-tar -xzf Python-3.10.12.tgz
-cd Python-3.10.12
-
-./configure --enable-optimizations
-make -j$(nproc)
-sudo make altinstall
-
-python3.10 --version
-
-# set as default
-echo "alias python3=python3.10" >> ~/.bashrc
-source ~/.bashrc
-
-
-
-
-
-# install opencv from source. this might be the only way if you install python more than 3.8.
-sudo apt-get install python3-opencv
-# this might br helpfull. 
-https://qengineering.eu/install-opencv-on-jetson-nano.html

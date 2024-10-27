@@ -77,5 +77,24 @@ busybox devmem 0x70003248 32 0x46
 busybox devmem 0x6000d100 32 0x00
 
 
+## setting up the vnc
 
+#Enable the VNC server to start each time you log in
+#If you have a Jetson Nano 2GB Developer Kit (running LXDE)
+mkdir -p ~/.config/autostart
+cp /usr/share/applications/vino-server.desktop ~/.config/autostart/.
+
+#Configure the VNC server
+gsettings set org.gnome.Vino prompt-enabled false
+gsettings set org.gnome.Vino require-encryption false
+
+#Set a password to access the VNC server
+# Replace thepassword with your desired password
+gsettings set org.gnome.Vino authentication-methods "['vnc']"
+gsettings set org.gnome.Vino vnc-password $(echo -n 'tripleh'|base64)
+
+#Reboot the system so that the settings take effect
+sudo reboot
+
+#The VNC server is only available after you have logged in to Jetson locally. If you wish VNC to be available automatically, use the system settings application on your developer kit to enable automatic login.
 

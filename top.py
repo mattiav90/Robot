@@ -186,8 +186,11 @@ while True:
 
 # Cleanup
 
+# close the cam
 cam.release()
 cv2.destroyAllWindows()
+
+# stop pwm
 my_pwm1.stop()
 my_pwm2.stop()
 GPIO.cleanup()

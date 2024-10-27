@@ -58,8 +58,8 @@ git remote set-url origin git@github.com:mattiav90/Robot.git
 # follow this: https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
 
 git clone https://github.com/FaBoPlatform/FaBoPWM-PCA9685-Python
-sudo apt-get install python-pip
-pip install FaBoPWM-PCA9685-Python/
+sudo apt-get install python3-pip
+pip3 install FaBoPWM-PCA9685-Python/
 #then use the code in the file test_steer.py
 
 

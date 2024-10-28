@@ -1,0 +1,10 @@
+
+### see the screen resolution options ###
+xrandr
+
+###  ###
+xrandr -s 0 
+
+
+
+

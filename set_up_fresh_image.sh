@@ -98,3 +98,27 @@ sudo reboot
 
 #The VNC server is only available after you have logged in to Jetson locally. If you wish VNC to be available automatically, use the system settings application on your developer kit to enable automatic login.
 
+
+
+# to use the vnc with jetson nano and connect from it remotely, we have to fake that there is a
+# screen connected to it. otherwise the resolution is 640.
+# do this:
+
+Setting the Desktop Resolution
+
+The desktop resolution is typically determined by the capabilities of the
+display that is attached to Jetson. If no display is attached, a default
+resolution of 640x480 is selected. To use a different resolution, edit
+/etc/X11/xorg.conf and append the following lines:
+
+Section “Screen”
+Identifier “Default Screen”
+Monitor “Configured Monitor”
+Device “Tegra0”
+SubSection “Display”
+Depth 24
+Virtual 1280 800 # Modify the resolution by editing these values
+EndSubSection
+EndSection
+
+

@@ -79,16 +79,6 @@ cv2.createTrackbar('x1', 'cam', 100, 200, nothing)
 min_area = 70  # You can adjust this value as needed
 
 
-# def plot_histogram(image):
-#     """Plot the histogram of an image."""
-#     plt.clf()  # Clear the previous histogram
-#     color = ('b', 'g', 'r')
-#     for i, col in enumerate(color):
-#         histr = cv2.calcHist([image], [i], None, [256], [0, 256])
-#         plt.plot(histr, color=col)
-#         plt.xlim([0, 256])
-#     plt.draw()  # Update the plot
-#     plt.pause(1)  # Pause to allow the plot to update
 
 kernel_soft=np.ones((5,5),np.float32)/20
 kernel_hard=np.ones((11,11),np.float32)/2
@@ -203,3 +193,18 @@ cv2.destroyAllWindows()
 my_pwm1.stop()
 my_pwm2.stop()
 GPIO.cleanup()
+
+
+
+# histogram 
+
+# def plot_histogram(image):
+#     """Plot the histogram of an image."""
+#     plt.clf()  # Clear the previous histogram
+#     color = ('b', 'g', 'r')
+#     for i, col in enumerate(color):
+#         histr = cv2.calcHist([image], [i], None, [256], [0, 256])
+#         plt.plot(histr, color=col)
+#         plt.xlim([0, 256])
+#     plt.draw()  # Update the plot
+#     plt.pause(1)  # Pause to allow the plot to update

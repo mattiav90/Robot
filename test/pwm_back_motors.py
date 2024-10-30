@@ -31,12 +31,12 @@ GPIO.setup(32, GPIO.OUT)
 # Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
-duty_cycle = 50  # Initial duty cycle (10%)
+duty_cycle = 90  # Initial duty cycle (10%)
 my_pwm1.start(duty_cycle)
-my_pwm2.start(duty_cycle)
+# my_pwm2.start(duty_cycle)
 
 
-time.sleep(5)
+time.sleep(10)
 
 
 # Cleanup

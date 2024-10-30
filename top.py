@@ -7,6 +7,15 @@ import pkg_resources
 import smbus
 #back motors
 import RPi.GPIO as GPIO
+import os
+
+
+# activate the back motors
+os.system("sudo busybox devmem 0x6000d504 32 0x2")
+os.system("sudo busybox devmem 0x700031fc 32 0x45")
+os.system("sudo busybox devmem 0x70003248 32 0x46")
+os.system("sudo busybox devmem 0x6000d100 32 0x00")
+
 
 
 # initialize the servo

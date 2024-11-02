@@ -18,21 +18,24 @@ channel=0
 
 go = True
 
+start=100
+stop=400
+
 while go:
-    for angle in range(150,300,10):
+    for angle in range(start,stop,10):
         PCA9685.set_channel_value(0,angle)
         PCA9685.set_channel_value(3,angle)
         value = PCA9685.get_channel_value(channel)
         print(value)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 
-    for angle in range(300,150,-10):
+    for angle in range(stop,start,-10):
         PCA9685.set_channel_value(0,angle)
         PCA9685.set_channel_value(3,angle)
         value = PCA9685.get_channel_value(channel)
         print(value)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
     if cv2.waitKey(1) == ord('q'):
         go=False

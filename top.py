@@ -28,6 +28,10 @@ PCA9685.set_hz(SERVO_HZ)
 # this is the single channel of BUS0. 
 channel=0
 
+# steering extremities
+start=230
+end=500
+
 
 #activate back motors
 
@@ -38,7 +42,7 @@ GPIO.setup(32, GPIO.OUT)
 # Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
-duty_cycle = 50  # Initial duty cycle (10%)
+duty_cycle = 40 # Initial duty cycle (10%)
 my_pwm1.start(duty_cycle)
 my_pwm2.start(duty_cycle)
 
@@ -71,7 +75,7 @@ cv2.moveWindow('cam2', 500, 500)
 
 
 cv2.createTrackbar('x1', 'cam', 100, 200, nothing)
-# cv2.createTrackbar('x2', 'cam', 250, 500, nothing)
+cv2.createTrackbar('x2', 'cam', 250, 500, nothing)
 # cv2.createTrackbar('x3', 'cam', 100, 500, nothing)
 # cv2.createTrackbar('x4', 'cam', 255, 500, nothing)
 
@@ -79,9 +83,13 @@ cv2.createTrackbar('x1', 'cam', 100, 200, nothing)
 min_area = 70  # You can adjust this value as needed
 
 
-
-kernel_soft=np.ones((5,5),np.float32)/20
-kernel_hard=np.ones((11,11),np.float32)/2
+# kernels
+dim_s=5
+kernel_soft=np.ones((dim_s,dim_s),np.float32)/20
+dim_m=15
+kernel_medium =np.ones((dim_m,dim_m),np.float32)/5
+dim=30
+kernel_hard=np.ones((dim,dim),np.float32)/2
 
 
 while True:
@@ -92,7 +100,7 @@ while True:
 
     
     x1 = cv2.getTrackbarPos('x1', 'cam')
-    # x2 = cv2.getTrackbarPos('x2', 'cam')
+    x2 = cv2.getTrackbarPos('x2', 'cam')
     # x3 = cv2.getTrackbarPos('x3', 'cam')
     # x4 = cv2.getTrackbarPos('x4', 'cam')
     
@@ -107,9 +115,20 @@ while True:
     # re set based on the new shape
     height, width, _ = img.shape
     # print("image height: ",height," width: ",width)
+
+    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    # cv2.imshow("HSV",hsv)
+
+    # [H,S,V]=cv2.split(hsv)
+
+    # for (name,chan) in zip(("H","S","V"), cv2.split(hsv)):
+    #     cv2.imshow(name,chan)
+    
     
     #convert in grey scale
     grey= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # grey=V
+    # cv2.imshow("grigio",grey)
 
 
 
@@ -118,14 +137,18 @@ while True:
 
     #get the average grey  (returns an rgb space. use only the first value)
     avg = cv2.mean(dst)
-    avg= avg[0]*(x1/100)        #this is just (avg*1).
-    # print("avg= ",avg)
+    avg= avg[0]*(x1/100)*0.8        #this is just (avg*1).
+    print("avg= ",avg)
 
     # Step 1: Threshold the image
     _, thresh1 = cv2.threshold(dst, avg, 255, cv2.THRESH_BINARY)
-
+    thresh1= cv2.bitwise_not(thresh1)
     # erode
-    thresh1= cv2.erode(thresh1,kernel_hard,iterations = 1)
+    thresh1= cv2.erode(thresh1,kernel_medium,iterations = 1)
+    
+    # dilate
+    # thresh1=cv2.dilate(thresh1,kernel_medium)
+
     # Step 3: Find contours
     contours, _ = cv2.findContours(thresh1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -135,37 +158,46 @@ while True:
     x=0
     # Optionally, draw the approximated contours on the original image
     for c in approx_contours:
+        cv2.drawContours(img, [c], -1, (255, 0, 0), 2) 
 
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
         area=cv2.contourArea(c)
-        if (aspect_ratio<0.6) and area>1000:
-            (x,y),(MA,ma),angle = cv2.fitEllipse(c)
-            ratio=ma/MA
-            # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
-            test_feature=int(height-200)
+        # if (aspect_ratio<0.6) and area>1000:
+        if  (aspect_ratio<0.6) and area>2000:
+            cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
+            angle=((x/width)*(end-start) )+start
+            PCA9685.set_channel_value(channel,angle)
+            print("area: ",area," aspect_ratio: ",aspect_ratio)
 
-            # controls if the height of the enclosing rectangle is close to the
-            # entire height of the image
-            test_height = (height-h)< 100 
+        #     (x,y),(MA,ma),angle = cv2.fitEllipse(c)
+        #     ratio=ma/MA
+        #     # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
+        #     test_feature=int(height-200)
 
-            if ratio>int(10) and test_height:
-                cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
-                rect_area=w*h
-                extent=float(area)/rect_area
-                # print("extent: ",extent)     
-                # print("ratio: ",ratio)
-                # print("angle: ",angle)     
-                # print("rece height: ",h," w: ",w)   
+        #     # controls if the height of the enclosing rectangle is close to the
+        #     # entire height of the image
+        #     test_height = (height-h)< 100 
+
+        #     # if ratio>int(10) and test_height:
+        #     if ratio>int(2) :
+        #         cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
+        #         rect_area=w*h
+        #         extent=float(area)/rect_area
+        #         # print("extent: ",extent)     
+        #         # print("ratio: ",ratio)
+        #         # print("angle: ",angle)     
+        #         # print("rece height: ",h," w: ",w)   
+        #         print("area: ",area," aspect_ratio: ",aspect_ratio," h: ",h," ratio: ",ratio)
 
                 
-                # Calculate the centroid coordinates
-                M = cv2.moments(c)
-                x = int(M['m10'] / M['m00'])
-                y = int(M['m01'] / M['m00'])
-                print("x: ",x)
-                angle=((x/width)*350)+100
-                PCA9685.set_channel_value(channel,angle)
+        #         # Calculate the centroid coordinates
+        #         M = cv2.moments(c)
+        #         x = int(M['m10'] / M['m00'])
+        #         y = int(M['m01'] / M['m00'])
+        #         print("x: ",x)
+        #         angle=((x/width)*(end-start) )+start
+        #         PCA9685.set_channel_value(channel,angle)
 
                 
 

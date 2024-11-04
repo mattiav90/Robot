@@ -1,14 +1,25 @@
 import cv2
+import os
+
 print(cv2.__version__)
 dispW=1500
 dispH=1000
 flip=0
 #Uncomment These next Two Line for Pi Camera
-camSet='nvarguscamerasrc !  video/x-raw(memory:NVMM), width=3264,\
-     height=2464, format=NV12, framerate=21/1 ! nvvidconv flip-method='+str(flip)+'\
-          ! video/x-raw, width='+str(dispW)+', height='+str(dispH)+', format=BGRx ! \
-              videoconvert ! video/x-raw, format=BGR ! appsink'
+shutter_speed = 100000000  # Set desired shutter speed in microseconds (e.g., 1/30 sec)
+
+# Construct GStreamer command
+camSet = f"nvarguscamerasrc exposuretimerange={shutter_speed},{shutter_speed} ! " \
+         f"video/x-raw(memory:NVMM), width=3264, height=2464, format=NV12, framerate=21/1 ! " \
+         f"nvvidconv flip-method={flip} ! video/x-raw, width={dispW}, height={dispH}, format=BGRx ! " \
+         f"videoconvert ! video/x-raw, format=BGR ! appsink"
+
+
+# gst-launch-1.0 nvarguscamerasrc exposuretimerange="13000 13000"    .... .. .
+
 cam= cv2.VideoCapture(camSet)
+
+
  
 #Or, if you have a WEB cam, uncomment the next line
 #(If it does not work, try setting to '1' instead of '0')

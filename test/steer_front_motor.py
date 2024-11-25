@@ -18,9 +18,11 @@ channel=0
 
 go = True
 
-# 
+# middle=365, deviation=135
 start=230
 stop=500
+
+
 
 delay=0.05
 # PCA9685.set_channel_value(3,(stop-start)/2)

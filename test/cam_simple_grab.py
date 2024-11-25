@@ -2,8 +2,8 @@ import cv2
 import os
 
 print(cv2.__version__)
-dispW=800
-dispH=600
+dispW=900
+dispH=700
 flip=0
 #Uncomment These next Two Line for Pi Camera
 shutter_speed = 100000000  # Set desired shutter speed in microseconds (e.g., 1/30 sec)

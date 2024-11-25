@@ -2,7 +2,7 @@
 pwm terminal: 32 and 33
 
 the alimentation tension for the steering servo is at least 5.5, 6 V.
-the alimentation for the back DC motors is 12V.
+the alimentation for the back DC motors is max 12V.
 
 
 

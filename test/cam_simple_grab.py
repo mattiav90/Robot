@@ -16,7 +16,6 @@ camSet = f"nvarguscamerasrc exposuretimerange={shutter_speed},{shutter_speed} ! 
 
 
 # gst-launch-1.0 nvarguscamerasrc exposuretimerange="13000 13000"    .... .. .
-
 cam= cv2.VideoCapture(camSet)
 
 

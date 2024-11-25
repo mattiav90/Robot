@@ -117,8 +117,24 @@ Monitor “Configured Monitor”
 Device “Tegra0”
 SubSection “Display”
 Depth 24
-Virtual 1280 800 # Modify the resolution by editing these values
+Virtual 1600 1200 # Modify the resolution by editing these values
 EndSubSection
 EndSection
+
+
+# to install the joypad drivers use: 
+pip3 install pygame
+
+#also you have to set this variable in the terminal to dont get it to complain:
+export DBUS_FATAL_WARNINGS=0
+
+#also install this software to see if the joystick is connected or not. 
+#once installed go find it into the programs user interface. 
+# jstest-gtk. 
+sudo apt-get install jstest-gtk 
+
+
+
+#then just ask chatgpt to write a simple program to use the joystick with this library.
 
 

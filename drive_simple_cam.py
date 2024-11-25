@@ -14,8 +14,8 @@ import cv2
 
 
 print(cv2.__version__)
-dispW=900
-dispH=700
+dispW=1100
+dispH=800
 flip=0
 #Uncomment These next Two Line for Pi Camera
 shutter_speed = 100000000  # Set desired shutter speed in microseconds (e.g., 1/30 sec)
@@ -104,6 +104,7 @@ try:
 
         ret, frame = cam.read()
         cv2.imshow('nanoCam',frame)
+        cv2.moveWindow("nanoCam", 0, 0)
 
         # Print axis values
         for i in range(joystick.get_numaxes()):

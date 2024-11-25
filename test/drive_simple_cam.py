@@ -14,8 +14,8 @@ import cv2
 
 
 print(cv2.__version__)
-dispW=900
-dispH=700
+dispW=1100
+dispH=800
 flip=0
 #Uncomment These next Two Line for Pi Camera
 shutter_speed = 100000000  # Set desired shutter speed in microseconds (e.g., 1/30 sec)
@@ -82,7 +82,7 @@ my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
 
 # Start the motor with an initial duty cycle
-duty_cycle = 10
+duty_cycle = 0
 my_pwm1.start(duty_cycle)
 my_pwm2.start(duty_cycle)
 
@@ -94,8 +94,14 @@ try:
         # accelerate
         axis_value = joystick.get_axis(3)  # Assuming axis 0 is the relevant axis
         duty_cycle = (-1*axis_value * 100)   # Scale -1 to 1 -> 0 to 100
-        duty_cycle = max(0, min(100, duty_cycle))  # Ensure within valid range
-        my_pwm1.ChangeDutyCycle(duty_cycle)
+
+        if duty_cycle>=0:
+            my_pwm1.ChangeDutyCycle(duty_cycle)
+            my_pwm2.ChangeDutyCycle(0)
+        else:
+            duty_cycle=-1*duty_cycle
+            my_pwm1.ChangeDutyCycle(0)
+            my_pwm2.ChangeDutyCycle(duty_cycle)
 
         # steer looking a axis 0. 
         steer=joystick.get_axis(0)*135+365
@@ -104,10 +110,11 @@ try:
 
         ret, frame = cam.read()
         cv2.imshow('nanoCam',frame)
+        cv2.moveWindow("nanoCam", 0, 0)
 
         # Print axis values
         for i in range(joystick.get_numaxes()):
-            print(f"Axis {i}: {joystick.get_axis(i):.3f}", end="  ")
+            print(f"Axis {i}: {joystick.get_axis(i):.3f}.", end="  ")
 
         print("\r", end="")  # Stay on the same line
 

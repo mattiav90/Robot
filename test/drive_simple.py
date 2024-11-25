@@ -56,11 +56,17 @@ try:
     while True:
         pygame.event.pump()  # Process events
 
-        # Accelerate
-        axis_value = joystick.get_axis(3)  # Assuming axis 3 controls acceleration
-        duty_cycle = -axis_value * 100  # Scale -1 to 1 -> 0 to 100
-        duty_cycle = max(0, min(100, duty_cycle))  # Clamp to valid range
-        motor_pwm1.ChangeDutyCycle(duty_cycle)
+        # accelerate
+        axis_value = joystick.get_axis(3)  # Assuming axis 0 is the relevant axis
+        duty_cycle = (-1*axis_value * 100)   # Scale -1 to 1 -> 0 to 100
+
+        if duty_cycle>=0:
+            my_pwm1.ChangeDutyCycle(duty_cycle)
+            my_pwm2.ChangeDutyCycle(0)
+        else:
+            duty_cycle=-1*duty_cycle
+            my_pwm1.ChangeDutyCycle(0)
+            my_pwm2.ChangeDutyCycle(duty_cycle)
 
         # Steer
         steer = joystick.get_axis(0) * STEERING_DEVIATION + STEERING_MID

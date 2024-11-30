@@ -103,8 +103,8 @@ try:
             my_pwm1.ChangeDutyCycle(0)
             my_pwm2.ChangeDutyCycle(duty_cycle)
 
-        # steer looking a axis 0. 
-        steer=joystick.get_axis(0)*135+365
+        # steer looking a axis 0. 365
+        steer=joystick.get_axis(0)*135+360
         steer=max(135, min(500, steer))
         PCA9685.set_channel_value(0,steer)
 

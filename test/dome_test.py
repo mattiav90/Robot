@@ -15,9 +15,13 @@ def update_kernel_size(val):
     global kernel_size
     kernel_size = max(1, val | 1)  # Ensure kernel size is always odd
 
-def update_canny_threshold(val):
-    global canny_threshold
-    canny_threshold = val
+def update_canny_threshold_min(val):
+    global canny_threshold_min
+    canny_threshold_min = val
+
+def update_canny_threshold_max(val):
+    global canny_threshold_max
+    canny_threshold_max = val
 
 # Check if the images folder exists
 if not os.path.exists(images_folder):
@@ -27,8 +31,13 @@ else:
     image_number = 1
 
     threshold_value = 0  # Initial threshold value
-    kernel_size = 11  # Initial kernel size
-    canny_threshold = 10  # Initial Canny edge threshold
+    kernel_size = 7  # Initial kernel size
+    canny_threshold_min = 40  # Initial Canny edge threshold
+    canny_threshold_max = 80  # Initial Canny edge threshold
+
+    ROI_scale = 3
+
+    closing = 40
 
     while True:
         filename = f"{image_number}.jpg"  # Assuming images are named as numbers with .jpg extension
@@ -43,23 +52,56 @@ else:
                 # Extract the red channel
                 _, _, r_channel = cv2.split(img)
 
-                # Define ROI as the bottom half of the image
+                # Define ROI as the bottom third of the image
                 height, width = r_channel.shape
-                roi = r_channel[height // 2:, :]
+                roi = r_channel[2 * height // ROI_scale:, :]
+                
 
-                # Apply GaussianBlur to smooth the image
-                blurred_roi = cv2.GaussianBlur(roi, (kernel_size, kernel_size), 0)
+                # Calculate the average gray value of the ROI
+                avg_gray_value = np.mean(roi)
+                print(f"Average gray value of ROI: {avg_gray_value:.2f}")
 
                 # Apply Canny edge detection to find edges
-                edges = cv2.Canny(blurred_roi, canny_threshold, canny_threshold * 2)
+                edges = cv2.Canny(roi, canny_threshold_min, canny_threshold_max)
 
-                # Overlay edges onto the red channel image
-                r_with_edges = r_channel.copy()
-                r_with_edges[height // 2:, :][edges > 0] = 255  # Highlight edges in white
+                # Define the dimensions of the rectangle
+                rect_width = 100  # Width of the rectangle
+                rect_height = 50  # Height of the rectangle
+
+                # Draw the black rectangle in the bottom-left corner
+                cv2.rectangle(edges, (0, height - rect_height), (rect_width, height), (255,255,0), -1)
+
+
+                # Perform morphological closing to connect edges
+                kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (closing, closing))
+                closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel1)
+
+                # Find contours of the closed edges
+                contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                # Filter out small contours and those near the bottom edges
+                min_contour_area = 200  # Minimum area threshold
+                max_contour_area = width * height / 6  # Maximum area threshold
+                filtered_contours = []
+                for cnt in contours:
+                    M = cv2.moments(cnt)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        area = cv2.contourArea(cnt)
+                        if area >= min_contour_area and area < max_contour_area and cy < (height - 600):  # Exclude contours near the bottom
+                            filtered_contours.append(cnt)
+
+                # Draw all contours in blue
+                r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
+                roi_overlay = r_with_edges[2 * height // ROI_scale:, :]
+                cv2.drawContours(roi_overlay, contours, -1, (255, 0, 0), thickness=2)  # Blue for all contours
+
+                # Draw filtered contours in green
+                cv2.drawContours(roi_overlay, filtered_contours, -1, (0, 255, 0), thickness=2)  # Green for filtered contours
 
                 # Merge the red channel back into an RGB image
-                r_with_roi = cv2.merge([r_with_edges, r_with_edges, r_with_edges])
-                cv2.rectangle(r_with_roi, (0, height // 2), (width, height), (0, 255, 0), 2)
+                cv2.rectangle(r_with_edges, (0, 2 * height // ROI_scale), (width, height), (0, 255, 0), 2)
 
                 # Add sliders to the displayed image
                 def nothing(x):
@@ -69,10 +111,11 @@ else:
                 cv2.resizeWindow("Red Channel with Edges", 800, 600)  # Resize window to smaller dimensions
                 cv2.createTrackbar("Threshold", "Red Channel with Edges", threshold_value, 255, update_threshold)
                 cv2.createTrackbar("Kernel Size", "Red Channel with Edges", kernel_size, 21, update_kernel_size)
-                cv2.createTrackbar("Canny Thresh", "Red Channel with Edges", canny_threshold, 255, update_canny_threshold)
+                cv2.createTrackbar("Canny Thresh min", "Red Channel with Edges", canny_threshold_min, 255, update_canny_threshold_min)
+                cv2.createTrackbar("Canny Thresh max", "Red Channel with Edges", canny_threshold_max, 255, update_canny_threshold_max)
 
-                # Display the red channel with edges in the ROI
-                cv2.imshow("Red Channel with Edges", r_with_roi)
+                # Display the red channel with edges and contours in the ROI
+                cv2.imshow("Red Channel with Edges", r_with_edges)
 
                 key = cv2.waitKey(30)  # Display image for 0.5 seconds
 

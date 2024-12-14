@@ -22,8 +22,8 @@ else:
     # Start from image "1" and go up
     image_number = 1
 
-    threshold_min_value = 50  # Initial minimum threshold value
-    threshold_max_value = 230  # Initial maximum threshold value
+    threshold_min_value = 0  # Initial minimum threshold value
+    threshold_max_value = 250  # Initial maximum threshold value
 
     # Create a separate window for the thresholded saturation
     cv2.namedWindow("Thresholded Saturation", cv2.WINDOW_NORMAL)
@@ -31,12 +31,14 @@ else:
     cv2.createTrackbar("Min Threshold", "Thresholded Saturation", threshold_min_value, 255, update_threshold_min)
     cv2.createTrackbar("Max Threshold", "Thresholded Saturation", threshold_max_value, 255, update_threshold_max)
 
-    combined_display=0
-    thresholded_saturation=0
+    combined_display = 0
+    thresholded_saturation = 0
     cv2.imshow("Combined HUE, Saturation, Value Channels", combined_display)
     cv2.imshow("Thresholded Saturation", thresholded_saturation)
-    cv2.moveWindow("Combined HUE, Saturation, Value Channels",0,0)
-    cv2.moveWindow("Thresholded Saturation",800,0)
+    cv2.moveWindow("Combined HUE, Saturation, Value Channels", 0, 0)
+    cv2.moveWindow("Thresholded Saturation", 600, 0)
+
+    ROI_scale = 3
 
     while True:
         filename = f"{image_number}.jpg"  # Assuming images are named as numbers with .jpg extension
@@ -56,14 +58,18 @@ else:
                 saturation_channel = hsv_img[:, :, 1]
                 value_channel = hsv_img[:, :, 2]
 
-                # Define ROI as the bottom half of the image
+                # Define ROI as the bottom third of the image
                 height, width = hue_channel.shape
-                roi_hue = hue_channel[height // 3:, :]
-                roi_saturation = saturation_channel[height // 3:, :]
-                roi_value = value_channel[height // 3:, :]
+                roi_hue = hue_channel[2 * height // ROI_scale:, :]
+                roi_saturation = saturation_channel[2 * height // ROI_scale:, :]
+                roi_value = value_channel[2 * height // ROI_scale:, :]
 
                 # Apply threshold on the saturation channel
                 thresholded_saturation = cv2.inRange(roi_saturation, threshold_min_value, threshold_max_value)
+
+                # Perform morphological opening on the thresholded saturation
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+                opened_saturation = cv2.morphologyEx(thresholded_saturation, cv2.MORPH_OPEN, kernel)
 
                 # Stack the channels together for display
                 hue_display = cv2.merge([roi_hue, roi_hue, roi_hue])
@@ -77,8 +83,8 @@ else:
                 # Display the combined image
                 cv2.imshow("Combined HUE, Saturation, Value Channels", combined_display)
 
-                # Display the thresholded saturation in a separate window
-                cv2.imshow("Thresholded Saturation", thresholded_saturation)
+                # Display the thresholded and opened saturation in a separate window
+                cv2.imshow("Thresholded Saturation", opened_saturation)
 
                 key = cv2.waitKey(30)  # Display image for 0.5 seconds
 

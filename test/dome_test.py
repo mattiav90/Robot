@@ -31,14 +31,18 @@ else:
     image_number = 1
 
     threshold_value = 0  # Initial threshold value
-    kernel_size = 7  # Initial kernel size
-    canny_threshold_min = 10  # Initial Canny edge threshold
-    canny_threshold_max = 80  # Initial Canny edge threshold
+    kernel_size = 30  # Initial kernel size
+    canny_threshold_min = 30  # Initial Canny edge threshold
+    canny_threshold_max = 90  # Initial Canny edge threshold
 
     # 70% down in the image to 80%. ROI position
     ROI_scale = 70
-    ROI_scale_bottom = 80
-    closing = 40
+    ROI_scale_bottom = 85
+    closing = 3
+
+    kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size,kernel_size))
+    kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size+20,kernel_size+20))
+
 
     while True:
         filename = f"{image_number}.jpg"  # Assuming images are named as numbers with .jpg extension
@@ -57,50 +61,87 @@ else:
                 height, width = r_channel.shape
                 roi = r_channel[ ROI_scale * height // 100 :ROI_scale_bottom * height // 100 , :]
 
-                # Calculate the average gray value of the ROI
-                avg_gray_value = np.mean(roi)
-                print(f"Average gray value of ROI: {avg_gray_value:.2f}")
+                # ***************************** start with threshold *****************************
+
+                ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+                cr_channel = ycrcb_img[:, :, 1]
+
+                # Define ROI as the bottom third of the image
+                roi_cr = cr_channel[ ROI_scale * height // 100 :ROI_scale_bottom * height // 100 , :]
+
+                # Calculate the average gray value in the Cr channel ROI
+                avg_cr_value = np.mean(roi_cr)
+                print("Average gray value in Cr channel (ROI): ",avg_cr_value*0.91," ")
+
+                # Apply threshold on the Cr channel
+                thresholded_saturation = cv2.inRange(roi_cr, 10, int(avg_cr_value)*0.91)
+
+                closed_thresh = cv2.dilate(thresholded_saturation, kernel1, iterations=1)
+
+                closed_thresh, _ = cv2.findContours(thresholded_saturation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                
+               
+                
+                # ***************************** now do it with edge detection *****************************
 
                 # Apply Canny edge detection to find edges
                 edges = cv2.Canny(roi, canny_threshold_min, canny_threshold_max)
 
-                # Define the dimensions of the rectangle
-                rect_width = 100  # Width of the rectangle
-                rect_height = 50  # Height of the rectangle
-
-                # Draw the black rectangle in the bottom-left corner
-                cv2.rectangle(edges, (0, height - rect_height), (rect_width, height), (255, 255, 0), -1)
 
                 # Perform morphological closing to connect edges
-                kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (closing, closing))
-                closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel1)
+                closed_edges = cv2.dilate(edges, kernel1, iterations=1)
+
+                closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel2)
 
                 # Find contours of the closed edges
-                contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours_edge, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                # Filter out small contours and those near the bottom edges
-                min_contour_area = 200  # Minimum area threshold
-                max_contour_area = width * height / 6  # Maximum area threshold
-                filtered_contours = []
-                for cnt in contours:
-                    M = cv2.moments(cnt)
-                    if M["m00"] != 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
-                        area = cv2.contourArea(cnt)
-                        if area >= min_contour_area and area < max_contour_area and cy < (height - 600):  # Exclude contours near the bottom
-                            filtered_contours.append(cnt)
+   
+                # ***************************** calculate intersection *****************************
+                # Step 1: Create binary masks for both contour sets
+                mask_thresh = np.zeros((height, width), dtype=np.uint8)
+                cv2.drawContours(mask_thresh, closed_thresh, -1, 255, thickness=cv2.FILLED)  # Fill the contours from closed_thresh
+
+                mask_edges = np.zeros((height, width), dtype=np.uint8)
+                cv2.drawContours(mask_edges, contours_edge, -1, 255, thickness=cv2.FILLED)  # Fill the contours from contours
+
+                # Step 2: Perform a logical AND operation
+                intersection_mask = cv2.bitwise_and(mask_thresh, mask_edges)
+
+                intersection_mask = cv2.dilate(intersection_mask, kernel2, iterations=1)
+
+
+                # Step 3: Extract contours from the intersection mask
+                intersected_contours, _ = cv2.findContours(intersection_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+
+                # # Filter out small contours and those near the bottom edges
+                # min_contour_area = 100  # Minimum area threshold
+                # max_contour_area = width * height / 6  # Maximum area threshold
+                # filtered_contours = []
+                # for cnt in intersected_contours:
+                #     area = cv2.contourArea(cnt)
+                #     if area >= min_contour_area :  
+                #         filtered_contours.append(cnt)
+
+
 
                 # Draw all contours in blue
-                r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
+                r_with_edges = cv2.merge([cr_channel, cr_channel, cr_channel])
                 roi_overlay = r_with_edges[ ROI_scale * height // 100 :ROI_scale_bottom * height // 100 , :]
-                cv2.drawContours(roi_overlay, contours, -1, (255, 0, 0), thickness=2)  # Blue for all contours
 
                 # Draw filtered contours in green
-                cv2.drawContours(roi_overlay, filtered_contours, -1, (0, 255, 0), thickness=2)  # Green for filtered contours
+                cv2.drawContours(roi_overlay, contours_edge, -1, (0, 255, 0), thickness=2)  # Green for filtered contours
+
+                # Draw thresholded contours in red
+                cv2.drawContours(roi_overlay, closed_thresh, -1, (255, 0, 0), thickness=2)  # Red for filtered contours
+
+                # Step 4: Draw the intersected contours in red
+                cv2.drawContours(roi_overlay, intersected_contours, -1, (0, 0, 255), thickness=2)  # Red for intersected contours
 
                 # Merge the red channel back into an RGB image
-                cv2.rectangle(r_with_edges, (0, ROI_scale * height // 100 ), (width,  ROI_scale_bottom * height // 100), (0, 255, 0), 2)
+                cv2.rectangle(r_with_edges, (0, ROI_scale * height // 100 ), (width,  ROI_scale_bottom * height // 100), (0, 0, 0), 2)
 
                 # Add sliders to the displayed image
                 def nothing(x):
@@ -114,9 +155,8 @@ else:
                 cv2.createTrackbar("Canny Thresh max", "Red Channel with Edges", canny_threshold_max, 255, update_canny_threshold_max)
 
                 # Display the red channel with edges and contours in the ROI
-                cv2.imshow("Red Channel with Edges", r_with_edges)
-                # cv2.imshow("Red Channel with Edges", edges)
-                # cv2.imshow("Red Channel with Edges", edges)
+                cv2.imshow("Red Channel with Edges", roi_overlay)
+                # cv2.imshow("Red Channel with Edges", closed_edges)
 
                 key = cv2.waitKey(30)  # Display image for 0.5 seconds
 

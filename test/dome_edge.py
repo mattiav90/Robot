@@ -69,7 +69,7 @@ else:
 
                 # Update kernels dynamically based on the trackbar
                 kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-                kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 30))
+                kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 40))
 
                 # Apply Canny edge detection
                 edges = cv2.Canny(blurred_roi, canny_threshold_min, canny_threshold_max)
@@ -112,7 +112,7 @@ else:
 
                 # Display the image
                 cv2.imshow("Red Channel with Edges", r_with_edges)
-                key = cv2.waitKey(30)
+                key = cv2.waitKey()
 
                 # If 'q' is pressed, exit the loop
                 if key == ord('q'):

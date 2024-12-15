@@ -51,16 +51,24 @@ else:
                 rgb_display = np.hstack([b_channel, g_channel, r_channel])
 
                 # Resize for better visualization
-                hsv_display = cv2.resize(hsv_display, (900, 300))
-                lab_display = cv2.resize(lab_display, (900, 300))
-                ycrcb_display = cv2.resize(ycrcb_display, (900, 300))
-                rgb_display = cv2.resize(rgb_display, (900, 300))
+                x=900
+                y=210
+                hsv_display = cv2.resize(hsv_display, (x, y))
+                lab_display = cv2.resize(lab_display, (x, y))
+                ycrcb_display = cv2.resize(ycrcb_display, (x, y))
+                rgb_display = cv2.resize(rgb_display, (x, y))
 
-                # Show the channels
-                cv2.imshow("HSV Channels (H, S, V)", hsv_display)
-                cv2.imshow("LAB Channels (L, A, B)", lab_display)
-                cv2.imshow("YCrCb Channels (Y, Cr, Cb)", ycrcb_display)
-                cv2.imshow("RGB Channels (R, G, B)", rgb_display)
+
+                big_display = np.vstack([hsv_display, lab_display, ycrcb_display, rgb_display])
+                cv2.imshow("Combined Channels Display", big_display)
+                cv2.moveWindow("Combined Channels Display",0,0)
+
+
+
+                # cv2.moveWindow("HSV Channels (H, S, V)",(0,0))
+                # cv2.moveWindow("LAB Channels (L, A, B)",(0,200))
+                # cv2.moveWindow("YCrCb Channels (Y, Cr, Cb)",(0,400))
+                # cv2.moveWindow("RGB Channels (R, G, B)",(500,0))
 
                 key = cv2.waitKey(200)
 

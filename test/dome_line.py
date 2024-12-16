@@ -5,7 +5,7 @@ from collections import deque
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/dome/1")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/no_dome/3")  # Replace "images" with the name of your images folder
 
 
 class RollingBuffer:
@@ -53,7 +53,9 @@ def update_blur_kernel(val):
     global blur_kernel_size
     blur_kernel_size = max(1, val | 1)  # Ensure kernel size is always odd
 
-
+def update_line_threshold(val):
+    global line_threshold
+    line_threshold = val 
 
 
 
@@ -76,17 +78,19 @@ else:
     ROI_scale_line = ROI_scale+(ROI_scale_bottom-ROI_scale)/2
 
     # number of printed lines:
-    line_number=10
+    line_number=6
+    line_thickness=10
 
     # waiting time
     time=30
+
+    # line detection threshold
+    line_threshold=160
 
     #dimension of rolling buffer.
     rolling_buffer = RollingBuffer(size=7)
 
 
-    x_v = []
-    area_v = []
 
 while True:
     filename = f"{image_number}.jpg"  # Assuming images are named as numbers with .jpg extension
@@ -112,24 +116,16 @@ while True:
 
             # Update kernels dynamically based on the trackbar
             kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size*2))
-            kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 40))
 
             # Apply Canny edge detection
             edges = cv2.Canny(blurred_roi, canny_threshold_min, canny_threshold_max)
-
-            # Perform morphological closing to connect edges
             closed_edges = cv2.dilate(edges, kernel1, iterations=1)
-            closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel2)
 
             # Fit a line in the ROI using Hough Line Transform
-            lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180, threshold=150)
+            lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180, threshold=line_threshold)
 
-            # generate image. 
-            r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
-
+            # convert the coordinates of the detected lines
             if lines is not None:                
-                # Calculate line lengths and store them along with coordinates
-                line_details = []
                 for rho, theta in lines[:line_number, 0]:
                     # Convert polar coordinates (rho, theta) to Cartesian points
                     a = np.cos(theta)
@@ -142,34 +138,31 @@ while True:
                     y2 = int(y0 - 1000 * a)
 
                     y_offset = ROI_scale * height // 100  # Adjust for ROI position
-                    cv2.line(mask, (x1, y1 + y_offset), (x2, y2 + y_offset), (255,255,255), 2)
+                    cv2.line(mask, (x1, y1 + y_offset), (x2, y2 + y_offset), (255,255,255), line_thickness)
 
             else:
                 print("No lines detected in the ROI.")
 
-            # Draw a line in the middle of the ROI
-            cv2.line(masko, (0, int(ROI_scale_line * height // 100)), (width, int(ROI_scale_line * height // 100)), (255,255,255), 2)
 
+            # Draw a horizontal line
+            cv2.line(masko, (0, int(ROI_scale_line * height // 100)), (width, int(ROI_scale_line * height // 100)), (255,255,255), line_thickness)
+
+            # intersect the vertical lines with the horizontal one
             intersection = cv2.bitwise_and(mask, masko)
+            # extract only one channel
+            _,_,intersection = cv2.split(intersection)
+
+            # threshold on the binary image
             _, binary_intersection = cv2.threshold(intersection, 127, 255, cv2.THRESH_BINARY)
 
-            # cv2.imshow("int",intersection)
-
-            # Ensure binary_intersection is binary and single-channel
-            if len(binary_intersection.shape) > 2:
-                binary_intersection = cv2.cvtColor(binary_intersection, cv2.COLOR_BGR2GRAY)
-
-            kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-            binary_intersection = cv2.dilate(binary_intersection, kernel1, iterations=1)
-            binary_intersection = cv2.morphologyEx(binary_intersection, cv2.MORPH_CLOSE, kernel1)
+            cv2.imshow("int",mask)
             
-
-            # Ensure 'intersection' is binary
+            # find contours
             contours, hierarchy = cv2.findContours(binary_intersection, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # cv2.imshow("po",binary_intersection)
+            # create the output image
+            r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
 
-            # Optional: Draw contours for visualization
             output_image = cv2.cvtColor(binary_intersection, cv2.COLOR_GRAY2BGR)
             cv2.drawContours(r_with_edges, contours, -1, (0, 255, 0), 2)
 
@@ -181,17 +174,20 @@ while True:
 
 
             # Create a window with trackbars
-            cv2.namedWindow("Red Channel with Edges", cv2.WINDOW_NORMAL)
-            cv2.resizeWindow("Red Channel with Edges", 800, 600)
-            cv2.createTrackbar("Kernel Size", "Red Channel with Edges", kernel_size, 100, update_kernel_size)
-            cv2.createTrackbar("Canny Thresh min", "Red Channel with Edges", canny_threshold_min, 255,
+            cv2.namedWindow("out img", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("out img", 1000, 700)
+            cv2.moveWindow("out img",0,0)
+
+
+            cv2.createTrackbar("Canny Thresh min", "out img", canny_threshold_min, 255,
                                update_canny_threshold_min)
-            cv2.createTrackbar("Canny Thresh max", "Red Channel with Edges", canny_threshold_max, 255,
+            cv2.createTrackbar("Canny Thresh max", "out img", canny_threshold_max, 255,
                                update_canny_threshold_max)
-            cv2.createTrackbar("Blur Kernel Size", "Red Channel with Edges", blur_kernel_size, 21, update_blur_kernel)
+            cv2.createTrackbar("Blur Kernel Size", "out img", blur_kernel_size, 21, update_blur_kernel)
+            cv2.createTrackbar("line threshold", "out img", line_threshold, 200, update_line_threshold)
 
             # Display the image
-            cv2.imshow("Red Channel with Edges", r_with_edges)
+            cv2.imshow("out img", r_with_edges)
             
             key = cv2.waitKey(time)
 

@@ -65,7 +65,7 @@ else:
     image_number = 1
 
     # Initial slider values
-    kernel_size = 5
+    kernel_size = 11
     canny_threshold_min = 5
     canny_threshold_max = 15
     blur_kernel_size = 19  # Initial blur kernel size
@@ -75,12 +75,8 @@ else:
     ROI_scale_bottom = 90
     ROI_scale_line = ROI_scale+(ROI_scale_bottom-ROI_scale)/2
 
-    # controls of contour
-    min_area = 300    # Minimum contour length for filtering
-    max_area = 10000  # Maximum contour length for filtering
-    max_aspect_ratio= 3 #2
-    max_circularity= 0.5 #0.5 
-    max_extent= 0.5 #0.5
+    # number of printed lines:
+    line_number=10
 
     # waiting time
     time=30
@@ -115,7 +111,7 @@ while True:
             blurred_roi = cv2.GaussianBlur(roi, (blur_kernel_size, blur_kernel_size), 0)
 
             # Update kernels dynamically based on the trackbar
-            kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+            kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size*2))
             kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 40))
 
             # Apply Canny edge detection
@@ -126,20 +122,15 @@ while True:
             closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel2)
 
             # Fit a line in the ROI using Hough Line Transform
-            lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180, threshold=130)
+            lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180, threshold=150)
 
             # generate image. 
             r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
 
             if lines is not None:                
-                # Set the target theta for best match (e.g., for vertical lines, π/2)
-                target_theta = np.pi / 2  # Adjust as needed
-                weight_angle = 0.7  # Weight for theta match
-                weight_length = 0.3  # Weight for line length
-
                 # Calculate line lengths and store them along with coordinates
                 line_details = []
-                for rho, theta in lines[:15, 0]:
+                for rho, theta in lines[:line_number, 0]:
                     # Convert polar coordinates (rho, theta) to Cartesian points
                     a = np.cos(theta)
                     b = np.sin(theta)
@@ -162,12 +153,18 @@ while True:
             intersection = cv2.bitwise_and(mask, masko)
             _, binary_intersection = cv2.threshold(intersection, 127, 255, cv2.THRESH_BINARY)
 
+            # cv2.imshow("int",intersection)
+
             # Ensure binary_intersection is binary and single-channel
             if len(binary_intersection.shape) > 2:
                 binary_intersection = cv2.cvtColor(binary_intersection, cv2.COLOR_BGR2GRAY)
 
-            # Ensure 'intersection' is binary
+            kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+            binary_intersection = cv2.dilate(binary_intersection, kernel1, iterations=1)
+            binary_intersection = cv2.morphologyEx(binary_intersection, cv2.MORPH_CLOSE, kernel1)
+            
 
+            # Ensure 'intersection' is binary
             contours, hierarchy = cv2.findContours(binary_intersection, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             # cv2.imshow("po",binary_intersection)

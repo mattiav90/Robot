@@ -6,7 +6,7 @@ from collections import deque
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/dome/2")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/no_dome/1")  # Replace "images" with the name of your images folder
 
 
 
@@ -89,7 +89,7 @@ else:
     time=30
 
     #dimension of rolling buffer.
-    rolling_buffer = RollingBuffer(size=7)
+    rolling_buffer = RollingBuffer(size=3)
 
 
     x_v = []

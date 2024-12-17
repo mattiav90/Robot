@@ -5,7 +5,7 @@ from collections import deque
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/dome/1")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/no_dome/3")  # Replace "images" with the name of your images folder
 
 
 class RollingBuffer:

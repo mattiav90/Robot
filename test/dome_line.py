@@ -5,7 +5,7 @@ from collections import deque
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/no_dome/3")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/dome/1")  # Replace "images" with the name of your images folder
 
 
 class RollingBuffer:
@@ -27,7 +27,7 @@ class RollingBuffer:
         # Return the average of the elements in the buffer
         if len(self.buffer) == 0:
             return 0  # Avoid division by zero if the buffer is empty
-        return self.sum / len(self.buffer)
+        return int(self.sum / len(self.buffer))
 
     def get_buffer(self):
         # Return the current elements in the buffer
@@ -68,7 +68,7 @@ else:
 
     # Initial slider values
     kernel_size = 11
-    canny_threshold_min = 5
+    canny_threshold_min = 3
     canny_threshold_max = 15
     blur_kernel_size = 19  # Initial blur kernel size
 
@@ -78,17 +78,17 @@ else:
     ROI_scale_line = ROI_scale+(ROI_scale_bottom-ROI_scale)/2
 
     # number of printed lines:
-    line_number=6
+    line_number=3
     line_thickness=10
 
     # waiting time
     time=30
 
     # line detection threshold
-    line_threshold=160
+    line_threshold=150
 
     #dimension of rolling buffer.
-    rolling_buffer = RollingBuffer(size=7)
+    rolling_buffer = RollingBuffer(size=3)
 
 
 
@@ -122,11 +122,15 @@ while True:
             closed_edges = cv2.dilate(edges, kernel1, iterations=1)
 
             # Fit a line in the ROI using Hough Line Transform
-            lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180, threshold=line_threshold)
+            lines = cv2.HoughLines(closed_edges, rho=1, theta=(np.pi/180)*10, threshold=line_threshold)
 
             # convert the coordinates of the detected lines
-            if lines is not None:                
-                for rho, theta in lines[:line_number, 0]:
+            if lines is not None:      
+               # Sort lines by the absolute value of rho (assuming stronger matches have higher rho)
+                sorted_lines = sorted(lines[:, 0], key=lambda x: abs(x[0]), reverse=True)
+
+                # Process only the top 'line_number' strongest lines
+                for rho, theta in sorted_lines[:line_number]:
                     # Convert polar coordinates (rho, theta) to Cartesian points
                     a = np.cos(theta)
                     b = np.sin(theta)
@@ -137,8 +141,9 @@ while True:
                     x2 = int(x0 - 1000 * (-b))
                     y2 = int(y0 - 1000 * a)
 
-                    y_offset = ROI_scale * height // 100  # Adjust for ROI position
-                    cv2.line(mask, (x1, y1 + y_offset), (x2, y2 + y_offset), (255,255,255), line_thickness)
+                    # Offset for the ROI
+                    y_offset = ROI_scale * height // 100
+                    cv2.line(mask, (x1, y1 + y_offset), (x2, y2 + y_offset), (255, 255, 255), line_thickness)
 
             else:
                 print("No lines detected in the ROI.")
@@ -159,6 +164,27 @@ while True:
             
             # find contours
             contours, hierarchy = cv2.findContours(binary_intersection, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Initialize list to store x-coordinates of barycenters
+            x_coords = []
+
+            # Loop through each contour
+            for contour in contours:
+                # Calculate contour moments
+                M = cv2.moments(contour)
+                if M["m00"] != 0:  # Avoid division by zero
+                    cx = int(M["m10"] / M["m00"])  # Centroid x-coordinate
+                    x_coords.append(cx)
+
+            # Calculate the average x-coordinate
+            if x_coords:
+                avg_x = sum(x_coords) / len(x_coords)
+                rolling_buffer.add(avg_x)
+                print(f"Average x-coordinate of barycenters: {avg_x}")
+            else:
+                print("No contours found.")
+
+
 
             # create the output image
             r_with_edges = cv2.merge([r_channel, r_channel, r_channel])
@@ -166,7 +192,13 @@ while True:
             output_image = cv2.cvtColor(binary_intersection, cv2.COLOR_GRAY2BGR)
             cv2.drawContours(r_with_edges, contours, -1, (0, 255, 0), 2)
 
-            
+            # dot
+            center=rolling_buffer.get_average()
+            y_dot=int(ROI_scale_line * height // 100)
+            print("the avg is : ",center)
+            cv2.circle(r_with_edges,(center,y_dot) ,radius=5,color=(255,0,0), thickness=-1)
+            # cv2.circle(r_with_edges, (r_with_edges, (center, ROI_scale_line * height // 100)), radius=5, color=(255, 0, 0), thickness=-1)
+
 
             # Draw ROI rectangle
             cv2.rectangle(r_with_edges, (0, ROI_scale * height // 100),
@@ -183,7 +215,7 @@ while True:
                                update_canny_threshold_min)
             cv2.createTrackbar("Canny Thresh max", "out img", canny_threshold_max, 255,
                                update_canny_threshold_max)
-            cv2.createTrackbar("Blur Kernel Size", "out img", blur_kernel_size, 21, update_blur_kernel)
+            cv2.createTrackbar("Blur Kernel Size", "out img", blur_kernel_size, 200, update_blur_kernel)
             cv2.createTrackbar("line threshold", "out img", line_threshold, 200, update_line_threshold)
 
             # Display the image

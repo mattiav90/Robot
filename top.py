@@ -58,10 +58,10 @@ ROI_TOP = 70
 ROI_BOTTOM = 90
 ROI_LINE = ROI_TOP + (ROI_BOTTOM - ROI_TOP) // 2
 
-LINE_NUMBER = 10
-LINE_THICKNESS = 3
+LINE_NUMBER = 3
+LINE_THICKNESS = 10
 
-LINE_THRESHOLD = 150
+LINE_THRESHOLD = 90
 
 ROLLING_BUFFER_SIZE = 3
 
@@ -145,6 +145,7 @@ while True:
 
     cv2.imshow("Processed", output)
     cv2.imshow("Edges", edges)
+    cv2.imshow("mask", mask)
 
     if cv2.waitKey(1) == ord('q'):
         break

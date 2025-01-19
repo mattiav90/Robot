@@ -1,242 +1,157 @@
 import cv2
 import numpy as np
 import time
-# for steering
 import Fabo_PCA9685
-import pkg_resources
 import smbus
-#back motors
 import RPi.GPIO as GPIO
 import os
+from collections import deque
 
-
-# activate the back motors
+# === BACK MOTOR ACTIVATION ===
 os.system("sudo busybox devmem 0x6000d504 32 0x2")
 os.system("sudo busybox devmem 0x700031fc 32 0x45")
 os.system("sudo busybox devmem 0x70003248 32 0x46")
 os.system("sudo busybox devmem 0x6000d100 32 0x00")
 
+# === SERVO INITIALIZATION ===
+BUSNUM = 1
+SERVO_HZ = 50
+INITIAL_VALUE = 300
 
-
-# initialize the servo
-BUSNUM=1
-SERVO_HZ=50
-INITIAL_VALUE=300
 bus = smbus.SMBus(BUSNUM)
-PCA9685 = Fabo_PCA9685.PCA9685(bus,INITIAL_VALUE)
+PCA9685 = Fabo_PCA9685.PCA9685(bus, INITIAL_VALUE)
 PCA9685.set_hz(SERVO_HZ)
-# this is the single channel of BUS0. 
-channel=0
+SERVO_CHANNEL = 0
 
-# steering extremities
-start=230
-end=500
+# Servo steering range
+SERVO_MIN = 230
+SERVO_MAX = 500
 
-
-#activate back motors
-
-# Setup
+# === BACK MOTOR SETUP ===
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(32, GPIO.OUT)
+GPIO.setup(33, GPIO.OUT)
 
-# Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
-duty_cycle = 50 # Initial duty cycle (10%)
-my_pwm1.start(duty_cycle)
-my_pwm2.start(duty_cycle)
+INITIAL_DUTY_CYCLE = 50
+my_pwm1.start(INITIAL_DUTY_CYCLE)
+my_pwm2.start(INITIAL_DUTY_CYCLE)
 
-
-# window width and height
-dispW = 800
-dispH = 600
+# === CAMERA SETTINGS ===
+dispW, dispH = 800, 600
 flip = 0
-
-# Uncomment These next Two Lines for Pi Camera
-camSet = 'nvarguscamerasrc !  video/x-raw(memory:NVMM), \
-        width=3264, height=2464, format=NV12, \
-        framerate=21/1 ! nvvidconv flip-method=' + str(flip) + ' ! video/x-raw, \
-        width=' + str(dispW) + ', height=' + str(dispH) + ', \
-        format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink'
-
+camSet = (
+    'nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3264, height=2464, format=NV12, '
+    f'framerate=21/1 ! nvvidconv flip-method={flip} ! video/x-raw, '
+    f'width={dispW}, height={dispH}, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink'
+)
 cam = cv2.VideoCapture(camSet)
 
-def nothing(x):
-    pass
+# === PARAMETERS ===
+KERNEL_SIZE = 11
+CANNY_THRESHOLD_MIN = 10
+CANNY_THRESHOLD_MAX = 30
+BLUR_KERNEL_SIZE = 19
 
-# windows for images
-cv2.namedWindow('cam')
-# cv2.namedWindow('cam1')
-cv2.namedWindow('cam2')
-# positions of windows
-cv2.moveWindow('cam', 0, 0)
-# cv2.moveWindow('cam1', 500, 0)
-cv2.moveWindow('cam2', 500, 500)
+ROI_TOP = 70
+ROI_BOTTOM = 90
+ROI_LINE = ROI_TOP + (ROI_BOTTOM - ROI_TOP) // 2
 
+LINE_NUMBER = 10
+LINE_THICKNESS = 3
 
-cv2.createTrackbar('x1', 'cam', 100, 200, nothing)
-cv2.createTrackbar('x2', 'cam', 250, 500, nothing)
-# cv2.createTrackbar('x3', 'cam', 100, 500, nothing)
-# cv2.createTrackbar('x4', 'cam', 255, 500, nothing)
+LINE_THRESHOLD = 150
 
-# Set a minimum area for contours to be considered "big"
-min_area = 70  # You can adjust this value as needed
+ROLLING_BUFFER_SIZE = 3
 
+# === ROLLING BUFFER ===
+class RollingBuffer:
+    def __init__(self, size):
+        self.size = size
+        self.buffer = deque(maxlen=size)
+        self.sum = 0
 
-# kernels
-dim_s=5
-kernel_soft=np.ones((dim_s,dim_s),np.float32)/20
-dim_m=15
-kernel_medium =np.ones((dim_m,dim_m),np.float32)/5
-dim=30
-kernel_hard=np.ones((dim,dim),np.float32)/2
+    def add(self, value):
+        if len(self.buffer) == self.size:
+            self.sum -= self.buffer[0]
+        self.buffer.append(value)
+        self.sum += value
 
+    def get_average(self):
+        return int(self.sum / len(self.buffer)) if self.buffer else 0
 
+rolling_buffer = RollingBuffer(ROLLING_BUFFER_SIZE)
+
+# === MAIN LOOP ===
 while True:
-    # Grab image
     ret, img = cam.read()
     if not ret:
         break
 
-    
-    x1 = cv2.getTrackbarPos('x1', 'cam')
-    x2 = cv2.getTrackbarPos('x2', 'cam')
-    # x3 = cv2.getTrackbarPos('x3', 'cam')
-    # x4 = cv2.getTrackbarPos('x4', 'cam')
-    
+    _, _, r_channel = cv2.split(img)
+    height, width = r_channel.shape
 
-    # Get dimensions
-    height, width, _ = img.shape
-    
-    # Define the ROI (bottom half)
-    roi_start_y = height // 2
-    roi_end_y = height
-    img = img[roi_start_y:roi_end_y, 0:width]  # Slicing to get the bottom half
-    # re set based on the new shape
-    height, width, _ = img.shape
-    # print("image height: ",height," width: ",width)
+    # Define ROI
+    roi = r_channel[ROI_TOP * height // 100 : ROI_BOTTOM * height // 100, :]
 
-    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    # cv2.imshow("HSV",hsv)
+    # Apply Gaussian Blur
+    blurred_roi = cv2.GaussianBlur(roi, (BLUR_KERNEL_SIZE, BLUR_KERNEL_SIZE), 0)
 
-    # [H,S,V]=cv2.split(hsv)
+    # Apply Canny edge detection
+    edges = cv2.Canny(blurred_roi, CANNY_THRESHOLD_MIN, CANNY_THRESHOLD_MAX)
 
-    # for (name,chan) in zip(("H","S","V"), cv2.split(hsv)):
-    #     cv2.imshow(name,chan)
-    
-    
-    #convert in grey scale
-    grey= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # grey=V
-    # cv2.imshow("grigio",grey)
+    # Morphological closing
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNEL_SIZE, KERNEL_SIZE * 2))
+    closed_edges = cv2.dilate(edges, kernel, iterations=1)
 
+    # Detect lines using Hough Transform
+    lines = cv2.HoughLines(closed_edges, rho=1, theta=np.pi / 180 * 10, threshold=LINE_THRESHOLD)
 
+    mask = np.zeros_like(r_channel, dtype=np.uint8)
+    if lines is not None:
+        sorted_lines = sorted(lines[:, 0], key=lambda x: abs(x[0]), reverse=True)
+        for rho, theta in sorted_lines[:LINE_NUMBER]:
+            a, b = np.cos(theta), np.sin(theta)
+            x0, y0 = a * rho, b * rho
+            x1, y1 = int(x0 + 1000 * -b), int(y0 + 1000 * a)
+            x2, y2 = int(x0 - 1000 * -b), int(y0 - 1000 * a)
+            cv2.line(mask, (x1, y1 + ROI_TOP * height // 100), (x2, y2 + ROI_TOP * height // 100), 255, LINE_THICKNESS)
 
-    # blur a littlebit the image
-    dst=cv2.filter2D(grey,-1,kernel_soft)
+    # Horizontal line for intersection
+    horizontal_line = np.zeros_like(mask)
+    cv2.line(horizontal_line, (0, ROI_LINE * height // 100), (width, ROI_LINE * height // 100), 255, LINE_THICKNESS)
 
-    #get the average grey  (returns an rgb space. use only the first value)
-    avg = cv2.mean(dst)
-    avg= avg[0]*(x1/100)*0.8        #this is just (avg*1).
-    print("avg= ",avg)
+    intersection = cv2.bitwise_and(mask, horizontal_line)
 
-    # Step 1: Threshold the image
-    _, thresh1 = cv2.threshold(dst, avg, 255, cv2.THRESH_BINARY)
-    thresh1= cv2.bitwise_not(thresh1)
-    # erode
-    thresh1= cv2.erode(thresh1,kernel_medium,iterations = 1)
-    
-    # dilate
-    # thresh1=cv2.dilate(thresh1,kernel_medium)
+    # Find contours
+    contours, _ = cv2.findContours(intersection, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    x_coords = [int(cv2.moments(c)["m10"] / cv2.moments(c)["m00"]) for c in contours if cv2.moments(c)["m00"] != 0]
 
-    # Step 3: Find contours
-    contours, _ = cv2.findContours(thresh1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if x_coords:
+        avg_x = sum(x_coords) / len(x_coords)
+        rolling_buffer.add(avg_x)
+        servo_angle = int((avg_x / width) * (SERVO_MAX - SERVO_MIN) + SERVO_MIN)
+        PCA9685.set_channel_value(SERVO_CHANNEL, servo_angle)
+    else:
+        print("No contours found.")
 
-    # Step 4: Approximate the contours
-    approx_contours = [cv2.approxPolyDP(c, 0.001 * cv2.arcLength(c, True), True) for c in contours]
+    # Visualization
+    center = rolling_buffer.get_average()
+    y_dot = ROI_LINE * height // 100
+    output = cv2.cvtColor(r_channel, cv2.COLOR_GRAY2BGR)
+    cv2.circle(output, (center, y_dot), 5, (255, 0, 0), -1)
+    cv2.rectangle(output, (0, ROI_TOP * height // 100), (width, ROI_BOTTOM * height // 100), (0, 255, 0), 2)
 
-    x=0
-    # Optionally, draw the approximated contours on the original image
-    for c in approx_contours:
-        cv2.drawContours(img, [c], -1, (255, 0, 0), 2) 
-
-        x,y,w,h = cv2.boundingRect(c)
-        aspect_ratio = float(w)/h
-        area=cv2.contourArea(c)
-        # if (aspect_ratio<0.6) and area>1000:
-        if  (aspect_ratio<0.6) and area>2000:
-            cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
-            angle=((x/width)*(end-start) )+start
-            PCA9685.set_channel_value(channel,angle)
-            print("area: ",area," aspect_ratio: ",aspect_ratio)
-
-        #     (x,y),(MA,ma),angle = cv2.fitEllipse(c)
-        #     ratio=ma/MA
-        #     # print("MA: ",MA," ma: ",ma," ratio: ",ratio)
-        #     test_feature=int(height-200)
-
-        #     # controls if the height of the enclosing rectangle is close to the
-        #     # entire height of the image
-        #     test_height = (height-h)< 100 
-
-        #     # if ratio>int(10) and test_height:
-        #     if ratio>int(2) :
-        #         cv2.drawContours(img, [c], -1, (0, 255, 0), 2) 
-        #         rect_area=w*h
-        #         extent=float(area)/rect_area
-        #         # print("extent: ",extent)     
-        #         # print("ratio: ",ratio)
-        #         # print("angle: ",angle)     
-        #         # print("rece height: ",h," w: ",w)   
-        #         print("area: ",area," aspect_ratio: ",aspect_ratio," h: ",h," ratio: ",ratio)
-
-                
-        #         # Calculate the centroid coordinates
-        #         M = cv2.moments(c)
-        #         x = int(M['m10'] / M['m00'])
-        #         y = int(M['m01'] / M['m00'])
-        #         print("x: ",x)
-        #         angle=((x/width)*(end-start) )+start
-        #         PCA9685.set_channel_value(channel,angle)
-
-                
-
-
-
-
-    # Display the original image with the edge-detected ROI
-    cv2.imshow('cam', img)
-    # cv2.imshow('cam1', contours)
-    cv2.imshow('cam2', thresh1)
-    
-    
+    cv2.imshow("Processed", output)
+    cv2.imshow("Edges", edges)
 
     if cv2.waitKey(1) == ord('q'):
         break
 
-
-# Cleanup
-
-# close the cam
+# === CLEANUP ===
 cam.release()
 cv2.destroyAllWindows()
-
-# stop pwm
 my_pwm1.stop()
 my_pwm2.stop()
 GPIO.cleanup()
-
-
-
-# histogram 
-
-# def plot_histogram(image):
-#     """Plot the histogram of an image."""
-#     plt.clf()  # Clear the previous histogram
-#     color = ('b', 'g', 'r')
-#     for i, col in enumerate(color):
-#         histr = cv2.calcHist([image], [i], None, [256], [0, 256])
-#         plt.plot(histr, color=col)
-#         plt.xlim([0, 256])
-#     plt.draw()  # Update the plot
-#     plt.pause(1)  # Pause to allow the plot to update

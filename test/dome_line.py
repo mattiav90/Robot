@@ -5,7 +5,7 @@ from collections import deque
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/no_dome/3")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/dome/2")  # Replace "images" with the name of your images folder
 
 
 class RollingBuffer:
@@ -78,8 +78,8 @@ else:
     ROI_scale_line = ROI_scale+(ROI_scale_bottom-ROI_scale)/2
 
     # number of printed lines:
-    line_number=3
-    line_thickness=10
+    line_number=10
+    line_thickness=3
 
     # waiting time
     time=30
@@ -220,6 +220,7 @@ while True:
 
             # Display the image
             cv2.imshow("out img", r_with_edges)
+            cv2.imshow("out img", edges)
             
             key = cv2.waitKey(time)
 

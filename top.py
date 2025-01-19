@@ -7,12 +7,6 @@ import RPi.GPIO as GPIO
 import os
 from collections import deque
 
-# === BACK MOTOR ACTIVATION ===
-os.system("sudo busybox devmem 0x6000d504 32 0x2")
-os.system("sudo busybox devmem 0x700031fc 32 0x45")
-os.system("sudo busybox devmem 0x70003248 32 0x46")
-os.system("sudo busybox devmem 0x6000d100 32 0x00")
-
 # === SERVO INITIALIZATION ===
 BUSNUM = 1
 SERVO_HZ = 50
@@ -28,15 +22,24 @@ SERVO_MIN = 230
 SERVO_MAX = 500
 
 # === BACK MOTOR SETUP ===
+
+os.system("sudo busybox devmem 0x6000d504 32 0x2")
+os.system("sudo busybox devmem 0x700031fc 32 0x45")
+os.system("sudo busybox devmem 0x70003248 32 0x46")
+os.system("sudo busybox devmem 0x6000d100 32 0x00")
+
+
+#activate back motors
+# Setup
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(32, GPIO.OUT)
-GPIO.setup(33, GPIO.OUT)
 
+# Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
-my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
-INITIAL_DUTY_CYCLE = 50
-my_pwm1.start(INITIAL_DUTY_CYCLE)
-my_pwm2.start(INITIAL_DUTY_CYCLE)
+# my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
+duty_cycle = 40  # Initial duty cycle (10%)
+my_pwm1.start(duty_cycle)
+
 
 # === CAMERA SETTINGS ===
 dispW, dispH = 800, 600

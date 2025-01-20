@@ -27,6 +27,7 @@ os.system("sudo busybox devmem 0x6000d504 32 0x2")
 os.system("sudo busybox devmem 0x700031fc 32 0x45")
 os.system("sudo busybox devmem 0x70003248 32 0x46")
 os.system("sudo busybox devmem 0x6000d100 32 0x00")
+os.system("export DBUS_FATAL_WARNINGS=0")
 
 
 #activate back motors
@@ -37,7 +38,7 @@ GPIO.setup(32, GPIO.OUT)
 # Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 # my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
-duty_cycle = 40  # Initial duty cycle (10%)
+duty_cycle = 100  # Initial duty cycle (10%)
 my_pwm1.start(duty_cycle)
 
 
@@ -52,19 +53,19 @@ camSet = (
 cam = cv2.VideoCapture(camSet)
 
 # === PARAMETERS ===
-KERNEL_SIZE = 11
-CANNY_THRESHOLD_MIN = 10
-CANNY_THRESHOLD_MAX = 30
-BLUR_KERNEL_SIZE = 19
+KERNEL_SIZE = 21
+CANNY_THRESHOLD_MIN = 15
+CANNY_THRESHOLD_MAX = 25
+BLUR_KERNEL_SIZE = 17
 
-ROI_TOP = 70
-ROI_BOTTOM = 90
+ROI_TOP = 60
+ROI_BOTTOM = 80
 ROI_LINE = ROI_TOP + (ROI_BOTTOM - ROI_TOP) // 2
 
-LINE_NUMBER = 3
-LINE_THICKNESS = 10
+LINE_NUMBER = 1
+LINE_THICKNESS = 5
 
-LINE_THRESHOLD = 90
+LINE_THRESHOLD = 100
 
 ROLLING_BUFFER_SIZE = 3
 
@@ -143,12 +144,17 @@ while True:
     center = rolling_buffer.get_average()
     y_dot = ROI_LINE * height // 100
     output = cv2.cvtColor(r_channel, cv2.COLOR_GRAY2BGR)
+    #roi_overlay = r_with_edges[ROI_TOP * height // 100:ROI_BOTTOM * height // 100, :]
+    #cv2.drawContours(roi_overlay, edges, -1, (0, 255, 0), thickness=2)
+
     cv2.circle(output, (center, y_dot), 5, (255, 0, 0), -1)
     cv2.rectangle(output, (0, ROI_TOP * height // 100), (width, ROI_BOTTOM * height // 100), (0, 255, 0), 2)
 
     cv2.imshow("Processed", output)
     cv2.imshow("Edges", edges)
     cv2.imshow("mask", mask)
+
+    
 
     if cv2.waitKey(1) == ord('q'):
         break

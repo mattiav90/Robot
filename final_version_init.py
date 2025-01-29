@@ -125,7 +125,7 @@ def go(path, display_time):
     
     global centroB
     global centroG
-
+    global weigthed_center
 
     if not os.path.exists(path):
         print(f"The path {path} does not exist.")
@@ -259,12 +259,22 @@ def go(path, display_time):
         # modify the global centro variables if something has been detected
         if avgB_c:
             centroB = avgB_c
+        else:
+            centroB = None
         
         if avgG_c:
             centroG = avgG_c
+        else:
+            centroG = None
 
+        if centroB and centroG:
+            weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
+        elif centroB:
+            weigthed_center = centroB
+        elif centroG:
+            weigthed_center = centroG
+    
 
-        weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
 
         cv2.circle(img, (weigthed_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
 
@@ -303,8 +313,8 @@ if __name__ == '__main__':
 
     centroB=0
     centroG=0
-    
+    weigthed_center=0
 
     # Path to the directory containing images
-    path = "./imgs_saved/imgs2/"
+    path = "./imgs_saved/imgs1/"
     go(path, 0.1)

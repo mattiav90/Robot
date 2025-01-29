@@ -41,7 +41,7 @@ def plot_rgb(img,y_pos,id):
 
 
 
-def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB):
+def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB, centerB, centerG):
     if imgG is None or imgB is None:
         print("Error: One or both images are invalid.")
         return
@@ -50,7 +50,7 @@ def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB):
     scale = 2
     x_dim_plot = int(x_dim / scale)
     y_dim_plot = int(y_dim / scale)
-    print("x_dim_plot:", x_dim_plot, "y_dim_plot:", y_dim_plot)
+    # print("x_dim_plot:", x_dim_plot, "y_dim_plot:", y_dim_plot)
 
     # Convert grayscale images to BGR for visualization
     imgG = cv2.cvtColor(imgG, cv2.COLOR_GRAY2BGR)
@@ -63,6 +63,14 @@ def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB):
     # Draw translated contours on the images
     cv2.drawContours(imgB, translated_contoursB, -1, (255, 0, 0), 2)
     cv2.drawContours(imgG, translated_contoursG, -1, (0, 255, 0), 2)
+
+    # circle 
+    radius=3
+    if centerB:
+        cv2.circle(imgB, (centerB, int(roi_start+roi_height/2)), radius, (255, 0, 0), 10)
+    
+    if centerG:
+        cv2.circle(imgG, (centerG, int(roi_start+roi_height/2)), radius, (0, 255, 0), 10)
 
     # Create named windows for resizing
     cv2.namedWindow("imgB", cv2.WINDOW_NORMAL)
@@ -79,6 +87,21 @@ def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB):
 
 
 
+def calculate_centroid(contours):
+    centroids = []
+    for cnt in contours:
+        M = cv2.moments(cnt)
+        if M['m00'] != 0:
+            cx = int(M['m10'] / M['m00'])
+            cy = int(M['m01'] / M['m00'])
+            centroids.append((cx, cy))
+        else:
+            # If the area (m00) is zero, the centroid is undefined; skip or handle as needed
+            print("Contour with zero area, centroid undefined.")
+    return centroids
+
+
+
 def merge_thresh_image(img,threshold,top,height,width):
 
     # Create a copy of the original image to overlay the thresholded ROI
@@ -88,17 +111,22 @@ def merge_thresh_image(img,threshold,top,height,width):
     return output_image
 
 
+def calculate_average_x(centroids):
+    if len(centroids) == 0:
+        print("No centroids to calculate the average.")
+        return None
+    total_x = sum(cx for cx, cy in centroids)
+    average_x = total_x / len(centroids)
+    return int(average_x)
 
 
-def load_img(path, display_time):
-    """
-    Load and display images from the specified directory after subtracting a calibration image.
 
-    Args:
-        path (str): Path to the directory containing images.
-        display_time (float): Time in seconds to display each image.
-        calib_img (ndarray): The calibration image to subtract from each image.
-    """
+def go(path, display_time):
+    
+    global centroB
+    global centroC
+
+
     if not os.path.exists(path):
         print(f"The path {path} does not exist.")
         return
@@ -159,21 +187,20 @@ def load_img(path, display_time):
         avgB = cv2.mean(roiB)[0]
         avgG = cv2.mean(roiG)[0]
         # avgR = cv2.mean(roiR)[0]
-        print(f"*avgB: {avgB} *avgG: {avgG} ")
+        # print(f"*avgB: {avgB} *avgG: {avgG} ")
         # max min
         (minValB, maxValB, _, _) = cv2.minMaxLoc(roiB)
         (minValG, maxValG, _, _) = cv2.minMaxLoc(roiG)
         # show this stuff
-        print(f"*maxValB: {maxValB} *maxValG: {maxValG} ")
-        print(f"*minValB: {minValB} *minValG: {minValG} ")
-        
+        # print(f"*maxValB: {maxValB} *maxValG: {maxValG} ")
+        # print(f"*minValB: {minValB} *minValG: {minValG} ")
 
         
 
 
         # threshold. define the thresholds considering the min max and avg. 
 
-        Blue_thresh  = max (100,int(avgB*1.25))
+        Blue_thresh  = max (100,int(avgB*1.2))
         Green_thresh = max(20,int(avgG*3))
 
         # probably there is no line in the image. do not detect a line
@@ -196,10 +223,49 @@ def load_img(path, display_time):
         contoursG, _ = cv2.findContours(Gt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
+        # Define a minimum and maximum area threshold
+        min_area = 200  # Adjust as needed
+        max_area = 30000  # Adjust as needed
+
+        # Filter contours by area for blue threshold with area printing
+        filtered_contoursB = []
+        for cnt in contoursB:
+            area = cv2.contourArea(cnt)
+            if min_area <= area <= max_area:
+                filtered_contoursB.append(cnt)
+
+        # Filter contours by area for green threshold with area printing
+        filtered_contoursG = []
+        for cnt in contoursG:
+            area = cv2.contourArea(cnt)
+            if min_area <= area <= max_area:
+                filtered_contoursG.append(cnt)
 
 
-        # plot the 2 images together. 
-        plot_two2(imgG,imgB,roi_start,roi_height,contoursG,contoursB)
+ 
+
+        centroidsB = calculate_centroid(filtered_contoursB)
+        centroidsG = calculate_centroid(filtered_contoursG)
+
+
+        # average position of the centroids that I find. 
+        avgB_c=calculate_average_x(centroidsB)
+        avgG_c=calculate_average_x(centroidsG)
+
+        print("centroidsB: ",centroidsB," avg: ",avgB_c)
+        print("centroidsG: ",centroidsG," avg: ",avgG_c)
+
+        if avgB_c:
+            centroB = avgB_c
+        
+        if avgG_c:
+            centroC = avgG_c
+        
+        
+
+
+       # plot the 2 images together. 
+        plot_two2(imgG,imgB,roi_start,roi_height,filtered_contoursG,filtered_contoursB,centroB,centroC)
 
 
 
@@ -218,6 +284,10 @@ if __name__ == '__main__':
     # Path to the calibration image
     calib_path = "./imgs_saved/imgs1/calib.jpg"
 
+    centroB=0
+    centroC=0
+    
+
     # Path to the directory containing images
     path = "./imgs_saved/imgs1/"
-    load_img(path, 0.01)
+    go(path, 0.01)

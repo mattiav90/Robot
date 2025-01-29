@@ -41,13 +41,13 @@ def plot_rgb(img,y_pos,id):
 
 
 
-def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB, centerB, centerG):
+def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB, centerB, centerG, scalemain):
     if imgG is None or imgB is None:
         print("Error: One or both images are invalid.")
         return
 
     x_dim, y_dim = imgG.shape
-    scale = 2
+    scale = 2.5
     x_dim_plot = int(x_dim / scale)
     y_dim_plot = int(y_dim / scale)
     # print("x_dim_plot:", x_dim_plot, "y_dim_plot:", y_dim_plot)
@@ -80,7 +80,7 @@ def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB, centerB, 
 
     cv2.namedWindow("imgG", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("imgG", y_dim_plot, x_dim_plot)
-    cv2.moveWindow("imgG",int(y_dim_plot*1.15),0)
+    cv2.moveWindow("imgG",int(y_dim_plot*1.2),0)
     cv2.imshow("imgG", imgG)
 
 
@@ -124,7 +124,7 @@ def calculate_average_x(centroids):
 def go(path, display_time):
     
     global centroB
-    global centroC
+    global centroG
 
 
     if not os.path.exists(path):
@@ -156,9 +156,9 @@ def go(path, display_time):
 
         # Calculate ROI dimensions
         roi_width = int(width * 1.0)  # 100% of the image width
-        roi_height = int(height * 0.10)  # 15% of the image height
+        roi_height = int(height * 0.15)  # 15% of the image height
 
-        roi_start=int(height/100*70)
+        roi_start=int(height/100*65)
 
         # Calculate top-left and bottom-right corners of the rectangle
         top_left = (int((width - roi_width) // 2), roi_start)
@@ -200,7 +200,7 @@ def go(path, display_time):
 
         # threshold. define the thresholds considering the min max and avg. 
 
-        Blue_thresh  = max (100,int(avgB*1.2))
+        Blue_thresh  = max (100,int(avgB*1.3))
         Green_thresh = max(20,int(avgG*3))
 
         # probably there is no line in the image. do not detect a line
@@ -255,26 +255,43 @@ def go(path, display_time):
         print("centroidsB: ",centroidsB," avg: ",avgB_c)
         print("centroidsG: ",centroidsG," avg: ",avgG_c)
 
+
+        # modify the global centro variables if something has been detected
         if avgB_c:
             centroB = avgB_c
         
         if avgG_c:
-            centroC = avgG_c
+            centroG = avgG_c
+
+
+        weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
+
+        cv2.circle(img, (weigthed_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
+
+        scale_img=1
+        cv2.namedWindow("img", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
+        cv2.moveWindow("img",0,0)
+        cv2.imshow("img",img)
         
         
-
-
-       # plot the 2 images together. 
-        plot_two2(imgG,imgB,roi_start,roi_height,filtered_contoursG,filtered_contoursB,centroB,centroC)
-
-
-
+        # plot the 2 images together. 
+        plot_two2(imgG,imgB,roi_start,roi_height,filtered_contoursG,filtered_contoursB,centroB,centroG,scale_img)
 
 
         # Wait for the specified time or until 'q' is pressed
-        if cv2.waitKey(int(display_time * 1000)) & 0xFF == ord('q'):
+        key = cv2.waitKey(int(display_time*100)) & 0xFF
+
+        if key == ord('q'):
             print("Exiting...")
             break
+        elif key == ord('s'):
+            display_time *= 2
+        elif key == ord('f'):
+            display_time /= 2
+
+
+            
 
     # Destroy all OpenCV windows after exiting the loop
     cv2.destroyAllWindows()
@@ -285,9 +302,9 @@ if __name__ == '__main__':
     calib_path = "./imgs_saved/imgs1/calib.jpg"
 
     centroB=0
-    centroC=0
+    centroG=0
     
 
     # Path to the directory containing images
-    path = "./imgs_saved/imgs1/"
-    go(path, 0.01)
+    path = "./imgs_saved/imgs2/"
+    go(path, 0.1)

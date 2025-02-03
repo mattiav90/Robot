@@ -61,7 +61,7 @@ my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
 
 # Start the motor with an initial duty cycle
-duty_cycle = 50
+duty_cycle = 40
 my_pwm1.start(duty_cycle)
 
 # Servo steering range
@@ -69,7 +69,7 @@ SERVO_MIN = 230
 SERVO_MAX = 500
 
 # rolling buffer definition:
-ROLLING_BUFFER_SIZE = 3
+ROLLING_BUFFER_SIZE = 10
 buffer = deque(maxlen=ROLLING_BUFFER_SIZE)
 
 
@@ -153,8 +153,8 @@ try:
 
         # calculate roi
         roi_width =  int(width*1.0)
-        roi_height = int(height*0.15)
-        roi_start=int(height/100*65)
+        roi_height = int(height*0.20)
+        roi_start=int(height/100*60)
 
         # Calculate top-left and bottom-right corners of the rectangle
         #  and draw the rectangle
@@ -188,12 +188,12 @@ try:
 
 
         # threshold. define the thresholds considering the min max and avg. 
-        Blue_thresh  = max (100,int(avgB*1.25))
-        Green_thresh = max(20,int(avgG*1.3))
+        Blue_thresh  = max (100,int(avgB*1.3))
+        Green_thresh = max(20,int(avgG*1.25))
 
         # probably there is no line in the image. do not detect a line
-        if((maxValB-minValB)<50):
-            Blue_thresh=255
+        # if((maxValB-minValB)<50):
+            # Blue_thresh=255
         
         # if((maxValG-minValG)<20):
         #     Green_thresh=255
@@ -254,6 +254,7 @@ try:
 
         if centroB and centroG:
             weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
+            # weigthed_center = int( (centroG * 0.8 + centroB * 0)  )
         elif centroB:
             weigthed_center = centroB
         elif centroG:

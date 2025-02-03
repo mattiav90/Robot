@@ -242,7 +242,6 @@ def go(path, display_time):
                 filtered_contoursG.append(cnt)
 
 
- 
 
         centroidsB = calculate_centroid(filtered_contoursB)
         centroidsG = calculate_centroid(filtered_contoursG)

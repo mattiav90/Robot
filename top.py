@@ -67,25 +67,7 @@ LINE_THICKNESS = 5
 
 LINE_THRESHOLD = 100
 
-ROLLING_BUFFER_SIZE = 3
 
-# === ROLLING BUFFER ===
-class RollingBuffer:
-    def __init__(self, size):
-        self.size = size
-        self.buffer = deque(maxlen=size)
-        self.sum = 0
-
-    def add(self, value):
-        if len(self.buffer) == self.size:
-            self.sum -= self.buffer[0]
-        self.buffer.append(value)
-        self.sum += value
-
-    def get_average(self):
-        return int(self.sum / len(self.buffer)) if self.buffer else 0
-
-rolling_buffer = RollingBuffer(ROLLING_BUFFER_SIZE)
 
 # === MAIN LOOP ===
 while True:

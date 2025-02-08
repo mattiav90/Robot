@@ -100,7 +100,7 @@ def calculate_average_x(centroids):
     return int(average_x)
 
 
-
+# this function plots an image with the detected contours in it.
 def plot_nicely(img, roi_start, roi_height, contours, center, color):
     if img is None:
         print("Error: no img was passed")
@@ -125,8 +125,8 @@ def plot_nicely(img, roi_start, roi_height, contours, center, color):
     return img
 
 
+# this function plots a single image, with color, scale, position
 def single_plot(img,plot_name,scale,position):
-
     y_dim, x_dim = img.shape[:2]
     x_plot = int(x_dim/scale)
     y_plot = int(y_dim/scale)
@@ -136,6 +136,25 @@ def single_plot(img,plot_name,scale,position):
     cv2.imshow(plot_name,img)
 
 
+def img_roi(img,roi,blurr_size):
+
+    roi = cv2.GaussianBlur(roi,(blurr_size,blurr_size),0)
+    avg = cv2.mean(roi)[0]
+    (minv, maxv, _, _) = cv2.minMaxLoc(roi)
+
+    return [avg,minv,maxv]
+
+def filter_contour_area(contours,mina,maxa):
+
+    # Filter contours by area for blue threshold with area printing
+    filtered_contours = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if mina <= area <= maxa:
+            filtered_contours.append(cnt)
+
+    return filtered_contours
+
   
 
 
@@ -144,8 +163,6 @@ try:
     while True:
         
         ret, img = cam.read()
-        # cv2.imshow('nanoCam',img)
-        # cv2.moveWindow("nanoCam", 0, 0)
 
         # calculate roi
         roi_width =  int(width*1.0)
@@ -157,43 +174,28 @@ try:
         top_left = (int((width - roi_width) // 2), roi_start)
         bottom_right = (top_left[0] + roi_width, top_left[1] + roi_height)
         cv2.rectangle(img, top_left, bottom_right, (0, 0, 0), 1)
-
+        
+        # estract RGB
         imgB,imgG,imgR = cv2.split(img)
     
-        # cv2.imshow("imgB",imgB) 
-        # cv2.imshow("imgG",imgG)
-        # cv2.imshow("imgR",imgR)
+        # calculate the rois and apply them to the images
+        roiB=imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        roiG=imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        
+        #blur and extract avg, min, max
+        avgB,minB,maxB = img_roi(imgB,roiB,25)
+        avgG,minG,maxG = img_roi(imgG,roiG,25)
         
 
-        # define the roi in blue and green channels. 
-        roiB = imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-        roiG = imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-
-        # blur the 2 roi
-        filter_size=25
-        roiB = cv2.GaussianBlur(roiB,(filter_size,filter_size),0)
-        roiG = cv2.GaussianBlur(roiG,(filter_size,filter_size),0)
-
-        # calcualte the avg color in each channel
-        avgB = cv2.mean(roiB)[0]
-        avgG = cv2.mean(roiG)[0]
-
-        # find also the min and max in the roi
-        (minValB, maxValB, _, _) = cv2.minMaxLoc(roiB)
-        (minValG, maxValG, _, _) = cv2.minMaxLoc(roiG)
-
-
-        # threshold. define the thresholds considering the min max and avg. 
+        # # threshold. define the thresholds considering the min max and avg. 
         Blue_thresh  = max (100,int(avgB*1.3))
-        Green_thresh = max(20,int(avgG*1.25))
+        Green_thresh = max (20,int(avgG*1.25))
 
 
 
         # apply the threshold in each channel
         _, Bt = cv2.threshold(roiB, Blue_thresh, 255, cv2.THRESH_BINARY )
         _, Gt = cv2.threshold(roiG, Green_thresh, 255, cv2.THRESH_BINARY )
-
-        # cv2.imshow("green thresh out",Gt)
         
 
         # detect the countours
@@ -206,18 +208,11 @@ try:
         max_area = 30000  # Adjust as needed
 
         # Filter contours by area for blue threshold with area printing
-        filtered_contoursB = []
-        for cnt in contoursB:
-            area = cv2.contourArea(cnt)
-            if min_area <= area <= max_area:
-                filtered_contoursB.append(cnt)
+        filtered_contoursB = filter_contour_area(contoursB,min_area,max_area)
+
 
         # Filter contours by area for green threshold with area printing
-        filtered_contoursG = []
-        for cnt in contoursG:
-            area = cv2.contourArea(cnt)
-            if min_area <= area <= max_area:
-                filtered_contoursG.append(cnt)
+        filtered_contoursG = filter_contour_area(contoursG,min_area,max_area)
 
 
         # trova i centroidi 

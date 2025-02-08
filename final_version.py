@@ -7,6 +7,9 @@ import pkg_resources
 import smbus
 import cv2
 from collections import deque
+from builtins import open
+
+
 
 def rolling_buffer(buffer, value, size):
     if len(buffer) == size:
@@ -155,7 +158,24 @@ def filter_contour_area(contours,mina,maxa):
 
     return filtered_contours
 
-  
+
+
+# function for trackbar
+def nothing(val):
+    pass
+
+
+# define main plot window
+slider1_name = "slider1"
+slider2_name = "slider2"
+slider3_name = "slider3"
+slider4_name = "slider4"
+
+cv2.namedWindow("img", cv2.WINDOW_NORMAL)
+cv2.createTrackbar(slider1_name, "img", 1, 100, nothing)
+cv2.createTrackbar(slider2_name, "img", 1, 100, nothing)
+cv2.createTrackbar(slider3_name, "img", 1, 100, nothing)
+cv2.createTrackbar(slider4_name, "img", 1, 100, nothing)
 
 
 weigthed_center=0
@@ -177,7 +197,15 @@ try:
         
         # estract RGB
         imgB,imgG,imgR = cv2.split(img)
-    
+
+         # Convert the image to HSV
+        hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        saturation_channel = hsv_img[:, :, 1]
+
+        # Convert the image to YCrCb
+        ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+        cr_channel = ycrcb_img[:, :, 1]
+
         # calculate the rois and apply them to the images
         roiB=imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
         roiG=imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
@@ -191,17 +219,13 @@ try:
         Blue_thresh  = max (100,int(avgB*1.3))
         Green_thresh = max (20,int(avgG*1.25))
 
-
-
         # apply the threshold in each channel
         _, Bt = cv2.threshold(roiB, Blue_thresh, 255, cv2.THRESH_BINARY )
         _, Gt = cv2.threshold(roiG, Green_thresh, 255, cv2.THRESH_BINARY )
-        
 
         # detect the countours
         contoursB, _ = cv2.findContours(Bt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contoursG, _ = cv2.findContours(Gt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
 
         # Define a minimum and maximum area threshold
         min_area = 200  # Adjust as needed
@@ -210,10 +234,8 @@ try:
         # Filter contours by area for blue threshold with area printing
         filtered_contoursB = filter_contour_area(contoursB,min_area,max_area)
 
-
         # Filter contours by area for green threshold with area printing
         filtered_contoursG = filter_contour_area(contoursG,min_area,max_area)
-
 
         # trova i centroidi 
         centroidsB = calculate_centroid(filtered_contoursB)
@@ -222,9 +244,6 @@ try:
         # average position of the centroids that I find. 
         avgB_c=calculate_average_x(centroidsB)
         avgG_c=calculate_average_x(centroidsG)
-
-        print("centroidsB: ",centroidsB," avg: ",avgB_c)
-        print("centroidsG: ",centroidsG," avg: ",avgG_c)
 
         # modify the global centro variables if something has been detected
         if avgB_c:
@@ -251,15 +270,25 @@ try:
 
         if weigthed_center:
             angle_avg=rolling_buffer(buffer, weigthed_center, ROLLING_BUFFER_SIZE)
-            # rb.add(weigthed_center)
-            # avg_angle=rb.get_average()
             servo_angle = int((angle_avg / width) * (SERVO_MAX - SERVO_MIN) + SERVO_MIN)
             PCA9685.set_channel_value(channel, servo_angle)
 
+        
+
+        # define main plot
         scale_img=1
-        cv2.namedWindow("img", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
         cv2.moveWindow("img",0,0)
+        slider1 = cv2.getTrackbarPos(slider1_name,"img")
+        slider2 = cv2.getTrackbarPos(slider2_name,"img")
+        slider3 = cv2.getTrackbarPos(slider3_name,"img")
+        slider4 = cv2.getTrackbarPos(slider4_name,"img")
+        print("slider1: ",slider1)
+        print("slider2: ",slider2)
+        print("slider3: ",slider3)
+        print("slider4: ",slider4)
+        
+
         cv2.imshow("img",img)
 
 

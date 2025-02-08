@@ -179,7 +179,7 @@ def print4(val1,val2,val3,val4):
 
 
 
-def go(sim):
+def go(sim,idx):
 
     # define main plot window and trackbars in it.
     cv2.namedWindow("img", cv2.WINDOW_NORMAL)
@@ -188,10 +188,10 @@ def go(sim):
     slider2_name = "sliderG"
     slider3_name = "sliderCR"
     slider4_name = "sliderSat"
-    cv2.createTrackbar(slider1_name, "img", 0, 100, nothing)
-    cv2.createTrackbar(slider2_name, "img", 0, 100, nothing)
-    cv2.createTrackbar(slider3_name, "img", 0, 100, nothing)
-    cv2.createTrackbar(slider4_name, "img", 0, 100, nothing)
+    cv2.createTrackbar("sliderB", "img", 25, 100, nothing)
+    cv2.createTrackbar("sliderG", "img", 90, 100, nothing)
+    cv2.createTrackbar("sliderSat", "img", 90, 100, nothing)
+    cv2.createTrackbar("sliderCR", "img", 30, 100, nothing)
     sliderB=0
     sliderG=0
     sliderCR=0
@@ -215,6 +215,8 @@ def go(sim):
                 if i==len(images):
                     i=1
                 img_name=f"{i+1}.jpg"
+                if idx!=False:
+                    img_name=f"{idx}.jpg"
                 full_path = os.path.join(path,img_name)
                 img=cv2.imread(full_path)
             
@@ -231,7 +233,7 @@ def go(sim):
             #  and draw the rectangle
             top_left = (int((width - roi_width) // 2), roi_start)
             bottom_right = (top_left[0] + roi_width, top_left[1] + roi_height)
-            cv2.rectangle(img, top_left, bottom_right, (0, 0, 0), 1)
+            # cv2.rectangle(img, top_left, bottom_right, (0, 0, 0), 1)
             
             # estract RGB
             imgB,imgG,imgR = cv2.split(img)
@@ -266,8 +268,8 @@ def go(sim):
 
             # # threshold. define the thresholds considering the min max and avg. 
             Blue_thresh  = int(avgB*   (1+(1*sliderB/100)) )
-            Green_thresh = int(avgG*   (1+(1*sliderG/100)) )
-            Sat_thresh   = int(avgSat* (1+(1*sliderSat/100)) )
+            Green_thresh = int(avgG*   (1+(4*sliderG/100)) )
+            Sat_thresh   = int(avgSat* (1+(6*sliderSat/100)) )
             CR_thresh    = int(avgCR*  (1+(1*sliderCR/100)) )
 
             # print4(Blue_thresh,Green_thresh,Sat_thresh,CR_thresh)
@@ -346,8 +348,8 @@ def go(sim):
             cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
             sliderB = cv2.getTrackbarPos(slider1_name,"img")
             sliderG = cv2.getTrackbarPos(slider2_name,"img")
-            sliderCR = cv2.getTrackbarPos(slider3_name,"img")
             sliderSat = cv2.getTrackbarPos(slider4_name,"img")
+            sliderCR = cv2.getTrackbarPos(slider3_name,"img")
 
             
 
@@ -390,6 +392,7 @@ def go(sim):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulation=<bool>")
     parser.add_argument("--sim", type=bool, help="Enable simulation mode.",default=False)
+    parser.add_argument("--idx", type=int, help="Fix the loaded image",default=False)
     args = parser.parse_args()
 
     if args.sim:
@@ -398,5 +401,5 @@ if __name__ == "__main__":
         print("Real run")
 
     # launch the main function
-    go(args.sim)
+    go(args.sim,args.idx)
 

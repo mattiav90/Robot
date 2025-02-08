@@ -166,17 +166,22 @@ def nothing(val):
 
 
 # define main plot window
-slider1_name = "slider1"
-slider2_name = "slider2"
-slider3_name = "slider3"
-slider4_name = "slider4"
+slider1_name = "sliderB"
+slider2_name = "sliderG"
+slider3_name = "sliderCR"
+slider4_name = "sliderSat"
 
 cv2.namedWindow("img", cv2.WINDOW_NORMAL)
-cv2.createTrackbar(slider1_name, "img", 1, 100, nothing)
-cv2.createTrackbar(slider2_name, "img", 1, 100, nothing)
-cv2.createTrackbar(slider3_name, "img", 1, 100, nothing)
-cv2.createTrackbar(slider4_name, "img", 1, 100, nothing)
+cv2.createTrackbar(slider1_name, "img", 0, 100, nothing)
+cv2.createTrackbar(slider2_name, "img", 0, 100, nothing)
+cv2.createTrackbar(slider3_name, "img", 0, 100, nothing)
+cv2.createTrackbar(slider4_name, "img", 0, 100, nothing)
 
+
+sliderB=0
+sliderG=0
+sliderCR=0
+sliderSat=0
 
 weigthed_center=0
 try:
@@ -198,26 +203,38 @@ try:
         # estract RGB
         imgB,imgG,imgR = cv2.split(img)
 
-         # Convert the image to HSV
+        # Convert the image to HSV
         hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        saturation_channel = hsv_img[:, :, 1]
+        img_sat = hsv_img[:, :, 1]
 
         # Convert the image to YCrCb
         ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-        cr_channel = ycrcb_img[:, :, 1]
+        img_cr = ycrcb_img[:, :, 1]
 
         # calculate the rois and apply them to the images
-        roiB=imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-        roiG=imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        roiB    = imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        roiG    = imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        roiSat  = img_sat[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+        roiCR   = img_cr[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
         
         #blur and extract avg, min, max
-        avgB,minB,maxB = img_roi(imgB,roiB,25)
-        avgG,minG,maxG = img_roi(imgG,roiG,25)
+        blur_filter = 25
+        avgB,minB,maxB       = img_roi(imgB,roiB,blur_filter)
+        avgG,minG,maxG       = img_roi(imgG,roiG,blur_filter)
+        avgSat,minSat,maxSat = img_roi(img_sat,roiSat,blur_filter)
+        avgCR,minCR,maxCR    = img_roi(img_cr,roiCR,blur_filter)
         
 
         # # threshold. define the thresholds considering the min max and avg. 
-        Blue_thresh  = max (100,int(avgB*1.3))
-        Green_thresh = max (20,int(avgG*1.25))
+        Blue_thresh  = int(avgB* (1+(1*sliderB/100)) )
+        Green_thresh = int(avgG* (1+(1*sliderG/100)) )
+        Sat_thresh   = int(avgG* (1+(1*sliderSat/100)) )
+        CR_thresh    = int(avgG* (1+(1*sliderCR/100)) )
+
+        # print("Blue_thresh: ",Blue_thresh)
+        # print("Green_thresh: ",Green_thresh)
+        # print("Sat_thresh: ",Sat_thresh)
+        # print("CR_thresh: ",CR_thresh)
 
         # apply the threshold in each channel
         _, Bt = cv2.threshold(roiB, Blue_thresh, 255, cv2.THRESH_BINARY )
@@ -279,14 +296,11 @@ try:
         scale_img=1
         cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
         cv2.moveWindow("img",0,0)
-        slider1 = cv2.getTrackbarPos(slider1_name,"img")
-        slider2 = cv2.getTrackbarPos(slider2_name,"img")
-        slider3 = cv2.getTrackbarPos(slider3_name,"img")
-        slider4 = cv2.getTrackbarPos(slider4_name,"img")
-        print("slider1: ",slider1)
-        print("slider2: ",slider2)
-        print("slider3: ",slider3)
-        print("slider4: ",slider4)
+        sliderB = cv2.getTrackbarPos(slider1_name,"img")
+        sliderG = cv2.getTrackbarPos(slider2_name,"img")
+        sliderCR = cv2.getTrackbarPos(slider3_name,"img")
+        sliderSat = cv2.getTrackbarPos(slider4_name,"img")
+   
         
 
         cv2.imshow("img",img)

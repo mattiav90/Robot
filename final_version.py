@@ -61,7 +61,8 @@ my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
 my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
 
 # Start the motor with an initial duty cycle
-duty_cycle = 40
+# this sets the speed of the motor.
+duty_cycle = 0
 my_pwm1.start(duty_cycle)
 
 # Servo steering range
@@ -88,6 +89,8 @@ def calculate_centroid(contours):
     return centroids
 
 
+
+
 def calculate_average_x(centroids):
     if len(centroids) == 0:
         print("No centroids to calculate the average.")
@@ -98,49 +101,42 @@ def calculate_average_x(centroids):
 
 
 
-
-def plot_two2(imgG, imgB, roi_start, roi_height, contoursG, contoursB, centerB, centerG, scalemain):
-    if imgG is None or imgB is None:
-        print("Error: One or both images are invalid.")
+def plot_nicely(img, roi_start, roi_height, contours, center, color):
+    if img is None:
+        print("Error: no img was passed")
         return
+    
+    x_dim, y_dim = img.shape
+    scale =2.5
+    x_dim_plot=int(x_dim/scale)
+    y_dim_plot=int(y_dim/scale)
 
-    x_dim, y_dim = imgG.shape
-    scale = 2.5
-    x_dim_plot = int(x_dim / scale)
-    y_dim_plot = int(y_dim / scale)
-    # print("x_dim_plot:", x_dim_plot, "y_dim_plot:", y_dim_plot)
-
-    # Convert grayscale images to BGR for visualization
-    imgG = cv2.cvtColor(imgG, cv2.COLOR_GRAY2BGR)
-    imgB = cv2.cvtColor(imgB, cv2.COLOR_GRAY2BGR)
-
-    # Translate contours by applying an offset to the y-coordinate
-    translated_contoursB = [contour + [0, roi_start] for contour in contoursB]
-    translated_contoursG = [contour + [0, roi_start] for contour in contoursG]
-
-    # Draw translated contours on the images
-    cv2.drawContours(imgB, translated_contoursB, -1, (255, 0, 0), 2)
-    cv2.drawContours(imgG, translated_contoursG, -1, (0, 255, 0), 2)
-
+    # convert greyscale into color for visualization
+    img = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
+    # shift the countours to match the image position
+    shift_contour = [contour + [0,roi_start] for contour in contours]
+    # draw the counrours on the image
+    cv2.drawContours(img,shift_contour, -1,color,2)
     # circle 
     radius=3
-    if centerB:
-        cv2.circle(imgB, (centerB, int(roi_start+roi_height/2)), radius, (255, 0, 0), 10)
-    
-    if centerG:
-        cv2.circle(imgG, (centerG, int(roi_start+roi_height/2)), radius, (0, 255, 0), 10)
+    if center:
+        cv2.circle(img,(center,int(roi_start+roi_height/2)),radius,color,10  )
 
-    # Create named windows for resizing
-    cv2.namedWindow("imgB", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("imgB", y_dim_plot, x_dim_plot)
-    cv2.moveWindow("imgB",0,0)
-    cv2.imshow("imgB", imgB)
+    return img
 
-    cv2.namedWindow("imgG", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("imgG", y_dim_plot, x_dim_plot)
-    cv2.moveWindow("imgG",int(y_dim_plot*1.2),0)
-    cv2.imshow("imgG", imgG)
 
+def single_plot(img,plot_name,scale,position):
+
+    y_dim, x_dim = img.shape[:2]
+    x_plot = int(x_dim/scale)
+    y_plot = int(y_dim/scale)
+    cv2.namedWindow(plot_name,cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(plot_name,x_plot,y_plot)
+    cv2.moveWindow(plot_name,position[0],position[1])
+    cv2.imshow(plot_name,img)
+
+
+  
 
 
 weigthed_center=0
@@ -148,8 +144,8 @@ try:
     while True:
         
         ret, img = cam.read()
-        cv2.imshow('nanoCam',img)
-        cv2.moveWindow("nanoCam", 0, 0)
+        # cv2.imshow('nanoCam',img)
+        # cv2.moveWindow("nanoCam", 0, 0)
 
         # calculate roi
         roi_width =  int(width*1.0)
@@ -191,19 +187,13 @@ try:
         Blue_thresh  = max (100,int(avgB*1.3))
         Green_thresh = max(20,int(avgG*1.25))
 
-        # probably there is no line in the image. do not detect a line
-        # if((maxValB-minValB)<50):
-            # Blue_thresh=255
-        
-        # if((maxValG-minValG)<20):
-        #     Green_thresh=255
 
 
         # apply the threshold in each channel
         _, Bt = cv2.threshold(roiB, Blue_thresh, 255, cv2.THRESH_BINARY )
         _, Gt = cv2.threshold(roiG, Green_thresh, 255, cv2.THRESH_BINARY )
 
-        cv2.imshow("green thresh out",Gt)
+        # cv2.imshow("green thresh out",Gt)
         
 
         # detect the countours
@@ -278,10 +268,16 @@ try:
         cv2.imshow("img",img)
 
 
-        # plot the 2 images together. 
-        plot_two2(imgG,imgB,roi_start,roi_height,filtered_contoursG,filtered_contoursB,centroB,centroG,scale_img)
+        # merge image with found contours
+        imgG = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(0,255,0))
+        imgB = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
 
         
+        # plot image with detected contours
+        single_plot(imgB,"imgB",2.5,[1000,0])
+        single_plot(imgG,"imgG",2.5,[1000,400])
+
+
 
         if cv2.waitKey(1) == ord('q'):
             break

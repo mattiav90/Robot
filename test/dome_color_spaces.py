@@ -4,7 +4,7 @@ import numpy as np
 
 # Define the root folder and the images folder
 root_folder = "/home/mattiav90/Desktop/Robot"  # Replace with the actual path to the root folder
-images_folder = os.path.join(root_folder, "imgs_saved/dome/1")  # Replace "images" with the name of your images folder
+images_folder = os.path.join(root_folder, "imgs_saved/imgs1")  # Replace "images" with the name of your images folder
 
 # Check if the images folder exists
 if not os.path.exists(images_folder):
@@ -29,6 +29,8 @@ else:
                 saturation_channel = hsv_img[:, :, 1]
                 value_channel = hsv_img[:, :, 2]
 
+                cv2.imshow("s:",saturation_channel)
+
                 # Convert the image to LAB
                 lab_img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
                 l_channel = lab_img[:, :, 0]
@@ -40,6 +42,8 @@ else:
                 y_channel = ycrcb_img[:, :, 0]
                 cr_channel = ycrcb_img[:, :, 1]
                 cb_channel = ycrcb_img[:, :, 2]
+
+                cv2.imshow("cr_channel: ",cr_channel)
 
                 #RGB channels
                 b_channel, g_channel, r_channel = cv2.split(img)
@@ -60,6 +64,7 @@ else:
 
 
                 big_display = np.vstack([hsv_display, lab_display, ycrcb_display, rgb_display])
+                # big_display = hsv_display
                 cv2.imshow("Combined Channels Display", big_display)
                 cv2.moveWindow("Combined Channels Display",0,0)
 

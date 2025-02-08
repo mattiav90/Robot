@@ -15,12 +15,12 @@ from builtins import open
 
 thresh_save_B   = 25 
 thresh_save_G   = 90 
-thresh_save_Sat = 80
-thresh_save_CR  = 40
+thresh_save_Sat = 90
+thresh_save_CR  = 30
 
-enable_B   = True
-enable_G   = True
-enable_Sat = True
+enable_B   = False
+enable_G   = False
+enable_Sat = False
 enable_CR  = True
 
 # ************************************************************************************
@@ -191,6 +191,40 @@ def print4(val1,val2,val3,val4):
     return 0
 
 
+def final_center(centers,enable):
+
+    enabled=0
+    for i, center in enumerate(centers):    
+        if enable[i]!=False:
+            enabled+=1
+        else:
+            centers[i]=None
+    
+    avg=0
+    for i in range(len(centers)):
+        if enable[i]!=False and centers[i]!=None:
+            avg=avg+centers[i]
+    
+    if enabled==0:
+        print("enable at least one traking")
+        avg=None
+    else:
+        avg=avg/enabled
+
+    print("enable:  ", enable  )
+    print("centers: ", centers )
+    print("enabled: ", enabled, " avg: ",avg )
+
+    if avg==0:
+        avg=None
+    else:
+        avg=int(avg)
+
+    return avg
+
+
+
+
 
 def go(sim,idx):
 
@@ -336,22 +370,15 @@ def go(sim,idx):
 
             # print("centroB: ",centroB," centroG: ",centroG," centroSat: ",centroSat," centroCR: ",centroCR )
             
+            # calculating the weighted center across all the selected controls
+            weigthed_center = final_center([centroB,centroG,centroSat,centroCR],[enable_B,enable_G,enable_Sat,enable_CR])
 
-            # here figure out the last part.....
 
-            if centroB and centroG:
-                weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
-                # weigthed_center = int( (centroG * 0.8 + centroB * 0)  )
-            elif centroB:
-                weigthed_center = centroB
-            elif centroG:
-                weigthed_center = centroG
+            # have an avg of the weighted centers here. 
             
 
-            cv2.circle(img, (weigthed_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
-
-
             if weigthed_center:
+                cv2.circle(img, (weigthed_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
                 angle_avg=rolling_buffer(buffer, weigthed_center, ROLLING_BUFFER_SIZE)
                 servo_angle = int((angle_avg / width) * (SERVO_MAX - SERVO_MIN) + SERVO_MIN)
                 PCA9685.set_channel_value(channel, servo_angle)

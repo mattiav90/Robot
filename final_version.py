@@ -11,6 +11,20 @@ from builtins import open
 
 
 
+# **************************** main variables of script ****************************
+
+thresh_save_B   = 25 
+thresh_save_G   = 90 
+thresh_save_Sat = 80
+thresh_save_CR  = 40
+
+enable_B   = True
+enable_G   = True
+enable_Sat = True
+enable_CR  = True
+
+# ************************************************************************************
+
 def rolling_buffer(buffer, value, size):
     if len(buffer) == size:
         buffer.popleft()
@@ -96,7 +110,6 @@ def calculate_centroid(contours):
 
 def calculate_average_x(centroids):
     if len(centroids) == 0:
-        # print("No centroids to calculate the average.")
         return None
     total_x = sum(cx for cx, cy in centroids)
     average_x = total_x / len(centroids)
@@ -183,15 +196,15 @@ def go(sim,idx):
 
     # define main plot window and trackbars in it.
     cv2.namedWindow("img", cv2.WINDOW_NORMAL)
-    cv2.moveWindow("img",0,0)
+    cv2.moveWindow("img",0,500)
     slider1_name = "sliderB"
     slider2_name = "sliderG"
     slider3_name = "sliderCR"
     slider4_name = "sliderSat"
-    cv2.createTrackbar("sliderB", "img", 25, 100, nothing)
-    cv2.createTrackbar("sliderG", "img", 90, 100, nothing)
-    cv2.createTrackbar("sliderSat", "img", 90, 100, nothing)
-    cv2.createTrackbar("sliderCR", "img", 30, 100, nothing)
+    cv2.createTrackbar("sliderB", "img", thresh_save_B, 100, nothing)
+    cv2.createTrackbar("sliderG", "img", thresh_save_G, 100, nothing)
+    cv2.createTrackbar("sliderSat", "img", thresh_save_Sat, 100, nothing)
+    cv2.createTrackbar("sliderCR", "img", thresh_save_CR, 100, nothing)
     sliderB=0
     sliderG=0
     sliderCR=0
@@ -324,6 +337,8 @@ def go(sim,idx):
             # print("centroB: ",centroB," centroG: ",centroG," centroSat: ",centroSat," centroCR: ",centroCR )
             
 
+            # here figure out the last part.....
+
             if centroB and centroG:
                 weigthed_center = int( (centroG * 0.8 + centroB * 0.2)  )
                 # weigthed_center = int( (centroG * 0.8 + centroB * 0)  )
@@ -344,7 +359,7 @@ def go(sim,idx):
             
 
             # define main plot
-            scale_img=1
+            scale_img=1.5
             cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
             sliderB = cv2.getTrackbarPos(slider1_name,"img")
             sliderG = cv2.getTrackbarPos(slider2_name,"img")
@@ -353,7 +368,7 @@ def go(sim,idx):
 
             
 
-            # cv2.imshow("img",img)
+            cv2.imshow("img",img)
 
 
             # merge image with found contours
@@ -362,13 +377,14 @@ def go(sim,idx):
             imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroB,(0,0,255))
             imgCR  = plot_nicely(imgCR,roi_start,roi_height,filtered_contoursCR,centroB,(0,0,0))
 
-            scale_subplot=2.8
+            scale_subplot=3.2
             offset=int(width/scale_subplot)
+            allign=100
             # plot image with detected contours
-            single_plot(imgB,"imgB",scale_subplot     ,[offset*0,0] )
-            single_plot(imgG,"imgG",scale_subplot     ,[offset*1,0] )
-            single_plot(imgSat,"imgSat",scale_subplot ,[offset*2,0] )
-            single_plot(imgCR,"imgCR",scale_subplot   ,[offset*3,0] )
+            single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] )
+            single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] )
+            single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] )
+            single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] )
 
 
 

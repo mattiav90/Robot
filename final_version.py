@@ -14,16 +14,23 @@ from builtins import open
 # **************************** main variables of script ****************************
 
 thresh_save_B   = 25 
-thresh_save_G   = 90 
-thresh_save_Sat = 90
-thresh_save_CR  = 30
+thresh_save_G   = 50
+thresh_save_Sat = 60
+thresh_save_CR  = 20
 
-enable_B   = False
-enable_G   = False
-enable_Sat = False
+enable_B   = True
+enable_G   = True
+enable_Sat = True
 enable_CR  = True
 
+# contours filtering
+min_area = 500
+max_area = 30000  
+
 # ************************************************************************************
+
+
+assert any([enable_B, enable_G, enable_Sat, enable_CR]), "Error: At least one of the controls must be active!"
 
 def rolling_buffer(buffer, value, size):
     if len(buffer) == size:
@@ -142,14 +149,22 @@ def plot_nicely(img, roi_start, roi_height, contours, center, color):
 
 
 # this function plots a single image, with color, scale, position
-def single_plot(img,plot_name,scale,position):
+def single_plot(img,plot_name,scale,position,enable):
     y_dim, x_dim = img.shape[:2]
     x_plot = int(x_dim/scale)
     y_plot = int(y_dim/scale)
+
+    if enable:
+        color_dot=(0,255,0)
+    else:
+        color_dot=(0,0,255)
+
     cv2.namedWindow(plot_name,cv2.WINDOW_NORMAL)
     cv2.resizeWindow(plot_name,x_plot,y_plot)
     cv2.moveWindow(plot_name,position[0],position[1])
+    cv2.circle(img,(20,20),3,color_dot,20)
     cv2.imshow(plot_name,img)
+
 
 
 def img_roi(img,roi,blurr_size):
@@ -206,27 +221,62 @@ def final_center(centers,enable):
             avg=avg+centers[i]
     
     if enabled==0:
-        print("enable at least one traking")
         avg=None
     else:
         avg=avg/enabled
-
-    print("enable:  ", enable  )
-    print("centers: ", centers )
-    print("enabled: ", enabled, " avg: ",avg )
+    
 
     if avg==0:
         avg=None
     else:
         avg=int(avg)
 
+    # print("enable:  ", enable  )
+    # print("centers: ", centers )
+    # print("enabled: ", enabled, " avg: ",avg )
+
+
     return avg
 
 
 
+class Rolling_buffer:
+    def __init__(self,size):
+        self.size=size
+        self.buffer=[]
+        self.lastNumerical=None
+
+    def append(self,val):
+        if len(self.buffer)==self.size:
+            self.buffer.pop(0)
+        self.buffer.append(val)
+    
+    def avg(self):
+        if not self.buffer:
+            return 0
+
+        avg = int(sum(self.buffer)/len(self.buffer))
+
+        # remember the last value different than None.
+        if avg != None:
+            self.lastNumerical = avg
+        elif avg == None:
+            avg=self.lastNumerical
+        
+        if self.lastNumerical==None:
+            avg=0
+        
+
+        print("buffer: ",self.buffer," avg: ",avg)
+        
+        return avg
+
 
 
 def go(sim,idx):
+
+    buffer_width=5
+    RB = Rolling_buffer(buffer_width)
 
     # define main plot window and trackbars in it.
     cv2.namedWindow("img", cv2.WINDOW_NORMAL)
@@ -247,10 +297,10 @@ def go(sim,idx):
     print("sim: ",sim)
 
 
-    path = "imgs_saved/imgs1/"
+    path = "imgs_saved/all/"
     images = sorted(os.listdir(path))
 
-
+    pause=False
     weigthed_center=0
     i=0
     try:
@@ -259,13 +309,16 @@ def go(sim,idx):
             # if I want to run a simulation
             if args.sim:
                 i+=1
-                if i==len(images):
+                if i==len(images)-1:
                     i=1
                 img_name=f"{i+1}.jpg"
                 if idx!=False:
                     img_name=f"{idx}.jpg"
                 full_path = os.path.join(path,img_name)
-                img=cv2.imread(full_path)
+                try:
+                    img=cv2.imread(full_path)
+                except:
+                    pass
             
             # if it is using the cam
             else:
@@ -315,9 +368,11 @@ def go(sim,idx):
 
             # # threshold. define the thresholds considering the min max and avg. 
             Blue_thresh  = int(avgB*   (1+(1*sliderB/100)) )
-            Green_thresh = int(avgG*   (1+(4*sliderG/100)) )
-            Sat_thresh   = int(avgSat* (1+(6*sliderSat/100)) )
+            Green_thresh = int(avgG*   (1+(10*sliderG/100)) )
+            Sat_thresh   = int(avgSat* (1+(10*sliderSat/100)) )
             CR_thresh    = int(avgCR*  (1+(1*sliderCR/100)) )
+
+            print(f"Blue_thresh: {Blue_thresh} Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} CR_thresh: {CR_thresh}")
 
             # print4(Blue_thresh,Green_thresh,Sat_thresh,CR_thresh)
 
@@ -334,9 +389,6 @@ def go(sim,idx):
             contoursSat, _ = cv2.findContours(Satt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contoursCR, _  = cv2.findContours(CRt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Define a minimum and maximum area threshold
-            min_area = 200  # Adjust as needed
-            max_area = 30000  # Adjust as needed
 
             # Filter contours by area for blue threshold with area printing
             filtered_contoursB   = filter_contour_area(contoursB,min_area,max_area)
@@ -374,15 +426,17 @@ def go(sim,idx):
             weigthed_center = final_center([centroB,centroG,centroSat,centroCR],[enable_B,enable_G,enable_Sat,enable_CR])
 
 
-            # have an avg of the weighted centers here. 
             
-
             if weigthed_center:
-                cv2.circle(img, (weigthed_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
-                angle_avg=rolling_buffer(buffer, weigthed_center, ROLLING_BUFFER_SIZE)
-                servo_angle = int((angle_avg / width) * (SERVO_MAX - SERVO_MIN) + SERVO_MIN)
-                PCA9685.set_channel_value(channel, servo_angle)
-
+                RB.append(weigthed_center)
+            
+            # calcualte avg of values
+            avg_center= RB.avg()
+            cv2.circle(img, (avg_center, int(roi_start+roi_height/2)), 3, (0, 0, 255), 10)
+            angle_avg=rolling_buffer(buffer, avg_center, ROLLING_BUFFER_SIZE)
+            servo_angle = int((angle_avg / width) * (SERVO_MAX - SERVO_MIN) + SERVO_MIN)
+            PCA9685.set_channel_value(channel, servo_angle)
+                
             
 
             # define main plot
@@ -393,8 +447,6 @@ def go(sim,idx):
             sliderSat = cv2.getTrackbarPos(slider4_name,"img")
             sliderCR = cv2.getTrackbarPos(slider3_name,"img")
 
-            
-
             cv2.imshow("img",img)
 
 
@@ -404,19 +456,27 @@ def go(sim,idx):
             imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroB,(0,0,255))
             imgCR  = plot_nicely(imgCR,roi_start,roi_height,filtered_contoursCR,centroB,(0,0,0))
 
-            scale_subplot=3.2
+            scale_subplot=3
             offset=int(width/scale_subplot)
             allign=100
             # plot image with detected contours
-            single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] )
-            single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] )
-            single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] )
-            single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] )
+            single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] , enable_B   )
+            single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] , enable_G   )
+            single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] , enable_Sat )
+            single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] , enable_CR  )
 
 
-
-            if cv2.waitKey(1) == ord('q'):
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
                 break
+            elif key == ord('p') and args.sim==True:
+                pause = not pause
+            
+            while pause:
+                key = cv2.waitKey(1) & 0xFF  # Wait for another key press
+                if key == ord('p'):  
+                    pause = False
+
 
 
 

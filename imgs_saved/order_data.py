@@ -31,7 +31,7 @@ def rename_images(folder_path):
 
     # Rename images sequentially
     for idx, old_name in enumerate(images, start=1):
-        new_name = f"{idx}.jpg"  # Rename all images to .jpg
+        new_name = f"{idx+1184}.jpg"  # Rename all images to .jpg
         old_path = os.path.join(folder_path, old_name)
         new_path = os.path.join(folder_path, new_name)
 

@@ -27,6 +27,9 @@ enable_CR  = True
 min_area = 500
 max_area = 30000  
 
+# robot speed
+speed = 35
+
 # ************************************************************************************
 #  image dimensions (do not change)
 width=1100
@@ -96,8 +99,8 @@ my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
 
 # Start the motor with an initial duty cycle
 # this sets the speed of the motor.
-duty_cycle = 0
-my_pwm1.start(duty_cycle)
+
+my_pwm1.start(speed)
 
 # Servo steering range
 SERVO_MIN = 230
@@ -277,7 +280,7 @@ class Rolling_buffer:
 
 
 
-def go(sim,idx):
+def go(sim,idx,plot):
 
     buffer_width=4
     RB = Rolling_buffer(buffer_width)
@@ -451,20 +454,21 @@ def go(sim,idx):
             cv2.imshow("img",img)
 
 
-            # merge image with found contours
-            imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(0,255,0))
-            imgB   = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
-            imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroB,(0,0,255))
-            imgCR  = plot_nicely(imgCR,roi_start,roi_height,filtered_contoursCR,centroB,(0,0,0))
+            if plot:
+                # merge image with found contours
+                imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(0,255,0))
+                imgB   = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
+                imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroB,(0,0,255))
+                imgCR  = plot_nicely(imgCR,roi_start,roi_height,filtered_contoursCR,centroB,(0,0,0))
 
-            scale_subplot=3
-            offset=int(width/scale_subplot)
-            allign=100
-            # plot image with detected contours
-            single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] , enable_B   )
-            single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] , enable_G   )
-            single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] , enable_Sat )
-            single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] , enable_CR  )
+                scale_subplot=3
+                offset=int(width/scale_subplot)
+                allign=100
+                # plot image with detected contours
+                single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] , enable_B   )
+                single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] , enable_G   )
+                single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] , enable_Sat )
+                single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] , enable_CR  )
 
 
             key = cv2.waitKey(1) & 0xFF
@@ -498,13 +502,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulation=<bool>")
     parser.add_argument("--sim", type=bool, help="Enable simulation mode.",default=False)
     parser.add_argument("--idx", type=int, help="Fix the loaded image",default=False)
+    parser.add_argument("--plot", type=bool, help="print all the control images", default=False )
     args = parser.parse_args()
 
     if args.sim:
         print("Simulation run")
+        args.plot=True
     else:
         print("Real run")
+        
+
 
     # launch the main function
-    go(args.sim,args.idx)
+    go(args.sim,args.idx,args.plot)
 

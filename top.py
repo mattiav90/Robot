@@ -13,22 +13,18 @@ from builtins import open
 
 # **************************** main variables of script ****************************
 
-thresh_save_B   = 25 
 thresh_save_G   = 50
 thresh_save_Sat = 60
-thresh_save_CR  = 20
 
-enable_B   = True
 enable_G   = True
 enable_Sat = True
-enable_CR  = True
 
 # contours filtering
 min_area = 500
 max_area = 30000  
 
 # robot speed
-speed = 35
+speed = 0
 
 # ************************************************************************************
 #  image dimensions (do not change)
@@ -44,7 +40,7 @@ roi_start  = int(height/100*65)
 roi_width  = int(width*1.0)
 
 
-assert any([enable_B, enable_G, enable_Sat, enable_CR]), "Error: At least one of the controls must be active!"
+assert any([ enable_G, enable_Sat]), "Error: At least one of the controls must be active!"
 
 def rolling_buffer(buffer, value, size):
     if len(buffer) == size:
@@ -290,17 +286,11 @@ def go(sim,idx,plot):
     # define main plot window and trackbars in it.
     cv2.namedWindow("img", cv2.WINDOW_NORMAL)
     cv2.moveWindow("img",0,500)
-    slider1_name = "sliderB"
     slider2_name = "sliderG"
-    slider3_name = "sliderCR"
     slider4_name = "sliderSat"
-    cv2.createTrackbar("sliderB", "img", thresh_save_B, 100, nothing)
     cv2.createTrackbar("sliderG", "img", thresh_save_G, 100, nothing)
     cv2.createTrackbar("sliderSat", "img", thresh_save_Sat, 100, nothing)
-    cv2.createTrackbar("sliderCR", "img", thresh_save_CR, 100, nothing)
-    sliderB=0
     sliderG=0
-    sliderCR=0
     sliderSat=0
 
     print("sim: ",sim)
@@ -347,23 +337,15 @@ def go(sim,idx,plot):
             imgSat = hsv_img[:, :, 1]
             imgSat = 255-imgSat
 
-            # Convert the image to YCrCb
-            ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-            imgCR = ycrcb_img[:, :, 1]
-            imgCR = 255 - imgCR
 
             # calculate the rois and apply them to the images
-            roiB    = imgB[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
             roiG    = imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
             roiSat  = imgSat[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-            roiCR   = imgCR[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
             
             #blur and extract avg, min, max
             blur_filter = 25
-            avgB,minB,maxB       = img_roi(imgB,roiB,blur_filter)
             avgG,minG,maxG       = img_roi(imgG,roiG,blur_filter)
             avgSat,minSat,maxSat = img_roi(imgSat,roiSat,blur_filter)
-            avgCR,minCR,maxCR    = img_roi(imgCR,roiCR,blur_filter)
 
 
 
@@ -371,63 +353,49 @@ def go(sim,idx,plot):
             
 
             # # threshold. define the thresholds considering the min max and avg. 
-            Blue_thresh  = int(avgB*   (1+(1*sliderB/100)) )
             Green_thresh = int(avgG*   (1+(10*sliderG/100)) )
             Sat_thresh   = int(avgSat* (1+(10*sliderSat/100)) )
-            CR_thresh    = int(avgCR*  (1+(1*sliderCR/100)) )
 
-            print(f"Blue_thresh: {Blue_thresh} Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} CR_thresh: {CR_thresh}")
+            print(f" Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} ")
 
             # print4(Blue_thresh,Green_thresh,Sat_thresh,CR_thresh)
 
 
             # apply the threshold in each channel
-            _, Bt   = cv2.threshold(roiB,   Blue_thresh, 255, cv2.THRESH_BINARY )
             _, Gt   = cv2.threshold(roiG,   Green_thresh, 255, cv2.THRESH_BINARY )
             _, Satt = cv2.threshold(roiSat, Sat_thresh, 255, cv2.THRESH_BINARY )
-            _, CRt  = cv2.threshold(roiCR,  CR_thresh, 255, cv2.THRESH_BINARY )
 
             # detect the countours
-            contoursB, _   = cv2.findContours(Bt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contoursG, _   = cv2.findContours(Gt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contoursSat, _ = cv2.findContours(Satt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            contoursCR, _  = cv2.findContours(CRt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
             # Filter contours by area for blue threshold with area printing
-            filtered_contoursB   = filter_contour_area(contoursB,min_area,max_area)
             filtered_contoursG   = filter_contour_area(contoursG,min_area,max_area)
             filtered_contoursSat = filter_contour_area(contoursSat,min_area,max_area)
-            filtered_contoursCR  = filter_contour_area(contoursCR,min_area,max_area)
 
 
 
             # trova i centroidi 
-            centroidsB   = calculate_centroid(filtered_contoursB)
             centroidsG   = calculate_centroid(filtered_contoursG)
             centroidsSat = calculate_centroid(filtered_contoursSat)
-            centroidsCR  = calculate_centroid(filtered_contoursCR)
 
             # print4(centroidsB,centroidsG,centroidsSat,centroidsCR)
 
             # average position of the centroids that I find. 
-            avgB_c=calculate_average_x(centroidsB)
             avgG_c=calculate_average_x(centroidsG)
             avgSat_c=calculate_average_x(centroidsSat)
-            avgCR_c=calculate_average_x(centroidsCR)
 
             # print4(avgB_c,avgG_c,avgSat_c,avgCR_c)
 
             # modify the global centro variables if something has been detected
-            centroB = check_if_exist(avgB_c)
             centroG = check_if_exist(avgG_c)
             centroSat = check_if_exist(avgSat_c)
-            centroCR = check_if_exist(avgCR_c)
 
             # print("centroB: ",centroB," centroG: ",centroG," centroSat: ",centroSat," centroCR: ",centroCR )
             
             # calculating the weighted center across all the selected controls
-            weigthed_center = FC.center([centroB,centroG,centroSat,centroCR],[enable_B,enable_G,enable_Sat,enable_CR])
+            weigthed_center = FC.center([centroG,centroSat],[enable_G,enable_Sat])
 
 
             
@@ -446,29 +414,24 @@ def go(sim,idx,plot):
             # define main plot
             scale_img=1.5
             cv2.resizeWindow("img", int(width/scale_img), int(height/scale_img))
-            sliderB = cv2.getTrackbarPos(slider1_name,"img")
             sliderG = cv2.getTrackbarPos(slider2_name,"img")
             sliderSat = cv2.getTrackbarPos(slider4_name,"img")
-            sliderCR = cv2.getTrackbarPos(slider3_name,"img")
 
             cv2.imshow("img",img)
 
 
             if plot:
                 # merge image with found contours
-                imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(0,255,0))
-                imgB   = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
-                imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroB,(0,0,255))
-                imgCR  = plot_nicely(imgCR,roi_start,roi_height,filtered_contoursCR,centroB,(0,0,0))
+                # imgB   = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
+                imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(255,0,0))
+                imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroSat,(0,0,255))
 
-                scale_subplot=3
+                scale_subplot=3.3
                 offset=int(width/scale_subplot)
                 allign=100
                 # plot image with detected contours
-                single_plot(imgB,"imgB",scale_subplot     ,[allign+offset*0,0] , enable_B   )
                 single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] , enable_G   )
                 single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] , enable_Sat )
-                single_plot(imgCR,"imgCR",scale_subplot   ,[allign+offset*3,0] , enable_CR  )
 
 
             key = cv2.waitKey(1) & 0xFF

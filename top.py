@@ -15,8 +15,7 @@ from builtins import open
 
 thresh_save_B   = 30 
 thresh_save_G   = 50
-thresh_save_Sat = 60
-thresh_save_CR  = 20
+thresh_save_CR  = 30
 
 enable_B   = True
 enable_G   = True
@@ -28,7 +27,7 @@ min_area = 500
 max_area = 30000  
 
 # robot speed
-speed = 0
+speed = 40
 
 # ************************************************************************************
 #  image dimensions (do not change)
@@ -293,10 +292,8 @@ def go(sim,idx,plot):
     slider1_name = "sliderB"
     slider2_name = "sliderG"
     slider3_name = "sliderCR"
-    slider4_name = "sliderSat"
     cv2.createTrackbar("sliderB", "img", thresh_save_B, 100, nothing)
     cv2.createTrackbar("sliderG", "img", thresh_save_G, 100, nothing)
-    cv2.createTrackbar("sliderSat", "img", thresh_save_Sat, 100, nothing)
     cv2.createTrackbar("sliderCR", "img", thresh_save_CR, 100, nothing)
     sliderB=0
     sliderG=0

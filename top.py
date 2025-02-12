@@ -176,11 +176,11 @@ def single_plot(img,plot_name,scale,position,enable):
 
 
 
-def img_roi(img,roi,blurr_size):
+def img_roi(img,blurr_size):
 
-    roi = cv2.GaussianBlur(roi,(blurr_size,blurr_size),0)
-    avg = cv2.mean(roi)[0]
-    (minv, maxv, _, _) = cv2.minMaxLoc(roi)
+    roi = cv2.GaussianBlur(img,(blurr_size,blurr_size),0)
+    avg = cv2.mean(img)[0]
+    (minv, maxv, _, _) = cv2.minMaxLoc(img)
 
     return [avg,minv,maxv]
 
@@ -329,23 +329,26 @@ def go(sim,idx,plot):
             bottom_right = (top_left[0] + roi_width, top_left[1] + roi_height)
             # cv2.rectangle(img, top_left, bottom_right, (0, 0, 0), 1)
             
+            # Crop the image before conversion
+            cropped_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+            
             # estract RGB
-            imgB,imgG,imgR = cv2.split(img)
+            _,imgG,_ = cv2.split(cropped_img)
 
             # Convert the image to HSV
-            hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            hsv_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2HSV)
             imgSat = hsv_img[:, :, 1]
             imgSat = 255-imgSat
 
 
             # calculate the rois and apply them to the images
-            roiG    = imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-            roiSat  = imgSat[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+            # roiG    = imgG[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+            # roiSat  = imgSat[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
             
             #blur and extract avg, min, max
             blur_filter = 25
-            avgG,minG,maxG       = img_roi(imgG,roiG,blur_filter)
-            avgSat,minSat,maxSat = img_roi(imgSat,roiSat,blur_filter)
+            avgG,_,_       = img_roi(imgG,blur_filter)
+            avgSat,minSat,maxSat = img_roi(imgSat,blur_filter)
 
 
 
@@ -362,8 +365,8 @@ def go(sim,idx,plot):
 
 
             # apply the threshold in each channel
-            _, Gt   = cv2.threshold(roiG,   Green_thresh, 255, cv2.THRESH_BINARY )
-            _, Satt = cv2.threshold(roiSat, Sat_thresh, 255, cv2.THRESH_BINARY )
+            _, Gt   = cv2.threshold(imgG,   Green_thresh, 255, cv2.THRESH_BINARY )
+            _, Satt = cv2.threshold(imgSat, Sat_thresh, 255, cv2.THRESH_BINARY )
 
             # detect the countours
             contoursG, _   = cv2.findContours(Gt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

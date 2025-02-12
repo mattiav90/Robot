@@ -24,7 +24,7 @@ min_area = 500
 max_area = 30000  
 
 # robot speed
-speed = 0
+speed = 40
 
 # ************************************************************************************
 #  image dimensions (do not change)

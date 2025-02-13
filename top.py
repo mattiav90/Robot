@@ -146,9 +146,9 @@ def plot_nicely(img, roi_start, roi_height, contours, center, color):
     # convert greyscale into color for visualization
     img = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
     # shift the countours to match the image position
-    shift_contour = [contour + [0,roi_start] for contour in contours]
+    # shift_contour = [contour + [0,roi_start] for contour in contours]
     # draw the counrours on the image
-    cv2.drawContours(img,shift_contour, -1,color,2)
+    cv2.drawContours(img,contours, -1,color,2)
     # circle 
     radius=3
     if center:

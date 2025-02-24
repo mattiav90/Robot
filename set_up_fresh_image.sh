@@ -66,7 +66,8 @@ pip3 install FaBoPWM-PCA9685-Python/
 ########## configure th 40 pin of jetson nano  ##########
 
 $ sudo /opt/nvidia/jetson-io/jetson-io.py
-
+configure manually
+activate pwm0 and pwm2
 
 # Enable Pin 32 / PWM0
 busybox devmem 0x700031fc 32 0x45

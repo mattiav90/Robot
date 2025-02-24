@@ -24,8 +24,10 @@ min_area = 500
 max_area = 30000  
 
 # robot speed
-speed = 40
+speed = 45
 
+# rolling avg buffer
+ROLLING_BUFFER_SIZE = 2
 # ************************************************************************************
 #  image dimensions (do not change)
 width=1100
@@ -91,7 +93,7 @@ GPIO.setup(33, GPIO.OUT)
 
 # Start PWM
 my_pwm1 = GPIO.PWM(32, 100)  # 100 Hz
-my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
+#my_pwm2 = GPIO.PWM(33, 100)  # 100 Hz
 
 # Start the motor with an initial duty cycle
 # this sets the speed of the motor.
@@ -103,7 +105,7 @@ SERVO_MIN = 230
 SERVO_MAX = 500
 
 # rolling buffer definition:
-ROLLING_BUFFER_SIZE = 10
+
 buffer = deque(maxlen=ROLLING_BUFFER_SIZE)
 
 
@@ -270,13 +272,15 @@ class Rolling_buffer:
             avg=lastNumerical
         
 
-        print("buffer: ",self.buffer," avg: ",avg)
+        #print("buffer: ",self.buffer," avg: ",avg)
         
         return avg
 
 
 
 def go(sim,idx,plot):
+
+    global speed
 
     buffer_width=4
     RB = Rolling_buffer(buffer_width)
@@ -359,7 +363,7 @@ def go(sim,idx,plot):
             Green_thresh = int(avgG*   (1+(10*sliderG/100)) )
             Sat_thresh   = int(avgSat* (1+(10*sliderSat/100)) )
 
-            print(f" Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} ")
+            #print(f" Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} ")
 
             # print4(Blue_thresh,Green_thresh,Sat_thresh,CR_thresh)
 
@@ -442,7 +446,21 @@ def go(sim,idx,plot):
                 break
             elif key == ord('p') and args.sim==True:    #pause
                 pause = not pause
-            
+                        # speed adjustment
+            elif key == 82:  # up arrow
+                speed += 5
+                speed=min(speed,100)
+                print("speed up: ",speed)
+                my_pwm1.ChangeDutyCycle(speed)
+
+            elif key == 84:  # down arrow
+                speed -= 5
+                speed = max(0,speed)
+                my_pwm1.ChangeDutyCycle(speed)
+                print("speed down: ",speed)
+
+
+
             # pause mode
             while pause:
                 key = cv2.waitKey(1) & 0xFF 
@@ -456,7 +474,7 @@ def go(sim,idx,plot):
     finally:
         print("Cleaning up resources...")
         my_pwm1.stop()
-        my_pwm2.stop()
+        #my_pwm2.stop()
         GPIO.cleanup()
         cam.release()
         cv2.destroyAllWindows()

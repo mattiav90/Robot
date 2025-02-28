@@ -24,6 +24,10 @@ endif
 go:
 	python3 top.py $(FLAGS)
 
+
+go_grab:
+	python3 top_grab.py --plot True
+
 # Dummy targets to avoid errors.
 plot:
 	@:

@@ -8,23 +8,28 @@ import argparse
 import cv2
 from collections import deque
 from builtins import open
-
+import numpy as np
 
 
 # **************************** main variables of script ****************************
 
 thresh_save_G   = 50
-thresh_save_Sat = 60
+thresh_save_Sat = 50
 
 enable_G   = True
 enable_Sat = True
 
-# contours filtering
-min_area = 500
-max_area = 30000  
+# contours filtering by area
+min_area = 1000
+max_area = 20000  
+
+# contours filtering by aspect ratio
+min_asp = 0.6
+max_asp = 2.00
+
 
 # robot speed
-speed = 45
+speed = 40
 
 # rolling avg buffer
 ROLLING_BUFFER_SIZE = 2
@@ -34,8 +39,8 @@ width=1100
 height=800
 
 # roi position:
-roi_height = int(height*0.20)
-roi_start  = int(height/100*65)
+roi_height = int(height*0.12)
+roi_start  = int(height/100*75)
 
 # ************************************************************************************
 
@@ -184,7 +189,7 @@ def img_roi(img,blurr_size):
     avg = cv2.mean(img)[0]
     (minv, maxv, _, _) = cv2.minMaxLoc(img)
 
-    return [avg,minv,maxv]
+    return [avg,minv,maxv,roi]
 
 def filter_contour_area(contours,mina,maxa):
 
@@ -197,6 +202,18 @@ def filter_contour_area(contours,mina,maxa):
 
     return filtered_contours
 
+
+def filter_contour_aspect_ratio(contours,mina,maxa):
+    filtered_contours = []
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = w / float(h) if h != 0 else 0
+        
+        # Apply filtering conditions
+        if mina <= aspect_ratio <= maxa:
+            filtered_contours.append(contour)
+    
+    return filtered_contours
 
 
 # function for trackbar
@@ -245,6 +262,22 @@ class Final_center:
             self.Lastavg=avg
         
         return int(avg)
+
+
+
+def print_contour_properties(contours, name):
+    for i, contour in enumerate(contours):
+        area = cv2.contourArea(contour)
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = w / float(h) if h != 0 else 0
+
+        if area>0.0:
+            print(f"Contour ({name}):")
+            print(f"  Area: {area:.2f}")
+            print(f"  Aspect Ratio: {aspect_ratio:.2f}")
+
+
+
 
 
 
@@ -350,38 +383,69 @@ def go(sim,idx,plot):
             # roiSat  = imgSat[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
             
             #blur and extract avg, min, max
-            blur_filter = 25
-            avgG,_,_       = img_roi(imgG,blur_filter)
-            avgSat,minSat,maxSat = img_roi(imgSat,blur_filter)
+            blur_filter = 35
+            avgG,_,_,smoothG       = img_roi(imgG,blur_filter)
+            avgSat,_,_,smoothSat = img_roi(imgSat,blur_filter)
 
-
-
-            # print4(avgB,avgG,avgSat,avgCR)
-            
 
             # # threshold. define the thresholds considering the min max and avg. 
             Green_thresh = int(avgG*   (1+(10*sliderG/100)) )
             Sat_thresh   = int(avgSat* (1+(10*sliderSat/100)) )
 
-            #print(f" Green_thresh: {Green_thresh} Sat_thresh: {Sat_thresh} ")
-
-            # print4(Blue_thresh,Green_thresh,Sat_thresh,CR_thresh)
+            # make sure is not too small
+            Green_thresh = max(Green_thresh,7)
+            Sat_thresh = max(Sat_thresh,7)
+            #print("Green_thresh: ",Green_thresh)
+            #print("Sat_thresh: ",Sat_thresh)
 
 
             # apply the threshold in each channel
             _, Gt   = cv2.threshold(imgG,   Green_thresh, 255, cv2.THRESH_BINARY )
             _, Satt = cv2.threshold(imgSat, Sat_thresh, 255, cv2.THRESH_BINARY )
 
-            # detect the countours
-            contoursG, _   = cv2.findContours(Gt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            contoursSat, _ = cv2.findContours(Satt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+
+            # Define a kernel for morphological operations
+            open_dim=5
+            kernel = np.ones((open_dim,open_dim), np.uint8)  # Adjust size as needed
+
+            # Apply morphological opening
+            Gt_open = cv2.morphologyEx(Gt, cv2.MORPH_OPEN, kernel)
+            Satt_open = cv2.morphologyEx(Satt, cv2.MORPH_OPEN, kernel)
+
+            # Now Gt_open and Satt_open contain the refined binary images
+
+
+
+
+
+            # detect the countours
+            contoursG, _   = cv2.findContours(Gt_open, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contoursSat, _ = cv2.findContours(Satt_open, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+       
+            if contoursG:
+                print_contour_properties(contoursG,"contoursG")
+            
+            if contoursSat:
+                print_contour_properties(contoursSat,"contoursSat")
+            
+
+            # contours filtering by area
+            min_area = 10
+            max_area = 10000  
+
+            # contours filtering by aspect ratio
+            min_asp = 0.5
+            max_asp = 10
 
             # Filter contours by area for blue threshold with area printing
             filtered_contoursG   = filter_contour_area(contoursG,min_area,max_area)
             filtered_contoursSat = filter_contour_area(contoursSat,min_area,max_area)
 
-
+            #filtered_contoursG   = filter_contour_aspect_ratio(filtered_contoursG,min_asp,max_asp)
+            #filtered_contoursSat = filter_contour_aspect_ratio(filtered_contoursSat,min_asp,max_asp)
+            
 
             # trova i centroidi 
             centroidsG   = calculate_centroid(filtered_contoursG)
@@ -429,16 +493,28 @@ def go(sim,idx,plot):
 
             if plot:
                 # merge image with found contours
-                # imgB   = plot_nicely(imgB,roi_start,roi_height,filtered_contoursB,centroB,(255,0,0))
-                imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(255,0,0))
-                imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroSat,(0,0,255))
+                
+                # print the original image
+                #imgG   = plot_nicely(imgG,roi_start,roi_height,filtered_contoursG,centroG,(255,0,0))
+                #imgSat = plot_nicely(imgSat,roi_start,roi_height,filtered_contoursSat,centroSat,(0,0,255))
 
-                scale_subplot=3.3
+                #Print the smoothed one 
+                smoothG   = plot_nicely(Gt_open,roi_start,roi_height,filtered_contoursG,centroG,(255,0,0))
+                smoothSat = plot_nicely(Satt_open,roi_start,roi_height,filtered_contoursSat,centroSat,(0,0,255))
+
+
+
+
+                scale_subplot=1.8
                 offset=int(width/scale_subplot)
                 allign=100
                 # plot image with detected contours
-                single_plot(imgG,"imgG",scale_subplot     ,[allign+offset*1,0] , enable_G   )
-                single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset*2,0] , enable_Sat )
+                #single_plot(imgG,"imgG",scale_subplot     ,[allign,0] , enable_G   )
+                #single_plot(imgSat,"imgSat",scale_subplot ,[allign+offset,0] , enable_Sat )
+
+                #plot smoothed images
+                single_plot(smoothG,"imgsmoothg",scale_subplot ,[allign,100] , enable_G )
+                single_plot(smoothSat,"imgsmoothsat",scale_subplot ,[allign+offset,100] , enable_Sat )
 
 
             key = cv2.waitKey(1) & 0xFF
